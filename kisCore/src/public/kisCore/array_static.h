@@ -41,6 +41,21 @@ public:
         m_nElements--;
     }
 
+    void fill()
+    {
+        m_nElements = MaxCount;
+    }
+
+    void empty()
+    {
+        for(uint32_t i = 0; i < m_nElements; ++i)
+        {
+            (m_elements + i)->~T();
+        }
+
+        m_nElements = 0;
+    }
+
     T* dataPointer()
     {
         return m_elements;

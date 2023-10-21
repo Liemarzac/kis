@@ -44,6 +44,8 @@ struct VulkanDriver
     ArrayStatic<const char*, 64> m_instanceExtensionNames;
     ArrayStatic<const char*, 64> m_deviceExtensionNames;
     ArrayStatic<const char*, 16> m_layerNames;
+    ArrayStatic<VkImage, 3> m_swapchainImages;
+    ArrayStatic<VkImageView, 3> m_swapchainImageViews;
 };
 
 VulkanDriver g_vulkanDriver;
@@ -456,7 +458,7 @@ void vulkan_PickPhysicalDevice()
     logTableFooter();
 
     //demo->fpGetPhysicalDeviceSurfaceFormatsKHR(demo->gpu, demo->surface, &formatCount, surfFormats);
-    ArrayStatic<VkSurfaceFormatKHR, 256> surfaceFormats(ArrayStatic_Init::Fill);
+    ArrayStatic<VkSurfaceFormatKHR, 64> surfaceFormats(ArrayStatic_Init::Fill);
     g_vulkanFuncPtrGetPhysicalDeviceSurfaceFormatsKHR(g_vulkanDriver.m_physicalDevice, g_vulkanDriver.m_surface, surfaceFormats.numPointer(), surfaceFormats.dataPointer());
 
     for(const VkSurfaceFormatKHR& surfaceFormat : surfaceFormats)
@@ -532,16 +534,13 @@ void vulkan_Prepare()
 
     VkPresentModeKHR swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
 
-    uint32_t nSwapchainImages = 3;
+    uint32_t nSwapchainImages = g_vulkanDriver.m_swapchainImageViews.capacity();
     if(surfaceCapabilities.maxImageCount > 0 && nSwapchainImages > surfaceCapabilities.maxImageCount)
     {
         nSwapchainImages = surfaceCapabilities.maxImageCount;
     }
 
-    if(nSwapchainImages < surfaceCapabilities.minImageCount)
-    {
-        nSwapchainImages = surfaceCapabilities.minImageCount;
-    }
+    ASSERT(nSwapchainImages >= surfaceCapabilities.minImageCount);
 
     VkSurfaceTransformFlagBitsKHR preTransform;
     if (surfaceCapabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
@@ -572,6 +571,8 @@ void vulkan_Prepare()
         }
     }
 
+    VkSwapchainKHR oldSwapchain = g_vulkanDriver.m_swapchain;
+
     VkSwapchainCreateInfoKHR swapchainCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
         .pNext = nullptr,
@@ -588,11 +589,50 @@ void vulkan_Prepare()
         .queueFamilyIndexCount = 0,
         .pQueueFamilyIndices = NULL,
         .presentMode = swapchainPresentMode,
-        .oldSwapchain = nullptr,
+        .oldSwapchain = oldSwapchain,
         .clipped = true,
     };
 
-    VULKAN_CHECK(g_vulkanFuncPtrCreateSwapchainKHR(g_vulkanDriver.m_device, &swapchainCreateInfo, nullptr, &g_vulkanDriver.m_swapchain));
+    VULKAN_CHECK(vkCreateSwapchainKHR(g_vulkanDriver.m_device, &swapchainCreateInfo, &g_vulkanAllocCallbacks, &g_vulkanDriver.m_swapchain));
+
+    g_vulkanDriver.m_swapchainImages.fill();
+    VULKAN_CHECK(vkGetSwapchainImagesKHR(g_vulkanDriver.m_device, g_vulkanDriver.m_swapchain, g_vulkanDriver.m_swapchainImages.numPointer(), g_vulkanDriver.m_swapchainImages.dataPointer()));
+
+    for(int i = 0 ; i < g_vulkanDriver.m_swapchainImageViews.num(); ++i)
+    {
+        vkDestroyImageView(g_vulkanDriver.m_device, g_vulkanDriver.m_swapchainImageViews[i], &g_vulkanAllocCallbacks);
+    }
+    g_vulkanDriver.m_swapchainImageViews.empty();
+
+    if(oldSwapchain != VK_NULL_HANDLE)
+    {
+        vkDestroySwapchainKHR(g_vulkanDriver.m_device, oldSwapchain, &g_vulkanAllocCallbacks);
+    }
+
+    for(int i = 0 ; i < nSwapchainImages; ++i)
+    {
+        VkImageViewCreateInfo imageViewCreateInfo = {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            .pNext = nullptr,
+            .format = g_vulkanDriver.m_surfaceFormat.format,
+            .components =
+                {
+                    .r = VK_COMPONENT_SWIZZLE_IDENTITY,
+                    .g = VK_COMPONENT_SWIZZLE_IDENTITY,
+                    .b = VK_COMPONENT_SWIZZLE_IDENTITY,
+                    .a = VK_COMPONENT_SWIZZLE_IDENTITY,
+                },
+            .subresourceRange =
+                {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1},
+            .viewType = VK_IMAGE_VIEW_TYPE_2D,
+            .flags = 0,
+            .image = g_vulkanDriver.m_swapchainImages[i]
+        };
+
+        VkImageView imageView = VK_NULL_HANDLE;
+        VULKAN_CHECK(vkCreateImageView(g_vulkanDriver.m_device, &imageViewCreateInfo, &g_vulkanAllocCallbacks, &imageView));
+        g_vulkanDriver.m_swapchainImageViews.add(imageView);
+    }
 }
 
 void vulkan_Init(const void* metalLayer)
@@ -612,21 +652,16 @@ void vulkan_Init(const void* metalLayer)
 
     bool bPortabilityEnumerationActive = false;
     vulkan_InitInstanceExtensions(bPortabilityEnumerationActive);
-
     vulkan_CreateInstance(bPortabilityEnumerationActive);
-
     vulkan_CreateSurface(metalLayer);
-
     vulkan_PickPhysicalDevice();
-
     vulkan_CreateDevice();
-
     vulkan_Prepare();
 }
 
 void shutdownVulkan()
 {
-    if(g_vulkanDriver.m_instance)
+    if(g_vulkanDriver.m_instance != VK_NULL_HANDLE)
     {
         vkDestroyInstance(g_vulkanDriver.m_instance, nullptr);
     }
