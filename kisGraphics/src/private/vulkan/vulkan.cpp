@@ -27,7 +27,7 @@ PFN_vkCreateSwapchainKHR g_vulkanFuncPtrCreateSwapchainKHR = nullptr;
         ASSERT(g_vulkanFuncPtr##entrypoint != nullptr);                                                       \
     }
 
-struct VulkanDriver
+struct kisVkInfo
 {
     VkInstance m_instance;
     VkPhysicalDevice m_physicalDevice;
@@ -48,25 +48,25 @@ struct VulkanDriver
     ArrayStatic<VkImageView, 3> m_swapchainImageViews;
 };
 
-VulkanDriver g_vulkanDriver;
+kisVkInfo g_vulkanDriver;
 VkAllocationCallbacks g_vulkanAllocCallbacks;
 
-struct VulkanMemBlock
+struct kisVkMemBlock
 {
     void* m_pointer;
     size_t m_size;
 };
 
-ArrayStatic<VulkanMemBlock, 2048> g_vulkanMemBlocks;
+ArrayStatic<kisVkMemBlock, 2048> g_vulkanMemBlocks;
 
-void* vulkan_Alloc(
+void* kisVkAlloc(
     void*                       pUserData,
     size_t                      size,
     size_t                      alignment,
     VkSystemAllocationScope     allocationScope)
 {
     void* pointer = aligned_alloc(alignment, size);
-    VulkanMemBlock block = {
+    kisVkMemBlock block = {
         .m_pointer = pointer,
         .m_size = size
     };
@@ -75,7 +75,7 @@ void* vulkan_Alloc(
     return pointer;
 }
 
-void* vulkan_Realloc(
+void* kisVkRealloc(
     void*                       pUserData,
     void*                       pOriginal,
     size_t                      size,
@@ -111,7 +111,7 @@ void* vulkan_Realloc(
     return newPointer;
 }
 
-void vulkan_Free(void* pUserData, void* pointer)
+void kisVkFree(void* pUserData, void* pointer)
 {
     for(uint32_t i = 0; i < g_vulkanMemBlocks.num(); ++i)
     {
@@ -124,20 +124,7 @@ void vulkan_Free(void* pUserData, void* pointer)
     }
 }
 
-bool isExtensionNameContained(const char* extensionName, const ExtensionNameArray& requiredExtensionNames)
-{
-    for(const char* requiredExtensionName : requiredExtensionNames)
-    {
-        if(strcmp(extensionName, requiredExtensionName) == 0)
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-VkBool32 vulkan_DebugMessengerCallback(
+VkBool32 kisVkDebugMessengerCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
     const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
@@ -203,7 +190,7 @@ VkBool32 vulkan_DebugMessengerCallback(
     return false;
 }
 
-void vulkan_InitInstanceLayers()
+void kisVkInitInstanceLayers()
 {
     const uint32_t k_maxEntries = 100;
     ArrayStatic<VkLayerProperties, k_maxEntries> propertiesArray(ArrayStatic_Init::Fill);
@@ -235,7 +222,7 @@ void vulkan_InitInstanceLayers()
     }
 }
 
-void vulkan_InitInstanceExtensions(bool& bPortabilityEnumerationActive)
+void kisVkInitInstanceExtensions(bool& bPortabilityEnumerationActive)
 {
     const uint32_t k_maxEntries = 100;
     ArrayStatic<VkExtensionProperties, k_maxEntries> propertiesArray(ArrayStatic_Init::Fill);
@@ -284,7 +271,7 @@ void vulkan_InitInstanceExtensions(bool& bPortabilityEnumerationActive)
     ASSERT(bMetalSurfaceExtensionFound);
 }
 
-void vulkan_CreateInstance(bool bPortabilityEnumerationActive)
+void kisVkCreateInstance(bool bPortabilityEnumerationActive)
 {
     const VkApplicationInfo app = {
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -325,7 +312,7 @@ void vulkan_CreateInstance(bool bPortabilityEnumerationActive)
         dbgMessengerCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
                                                 VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
                                                 VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        dbgMessengerCreateInfo.pfnUserCallback = vulkan_DebugMessengerCallback;
+        dbgMessengerCreateInfo.pfnUserCallback = kisVkDebugMessengerCallback;
         dbgMessengerCreateInfo.pUserData = &g_vulkanDriver;
         instanceCreateInfo.pNext = &dbgMessengerCreateInfo;
     }
@@ -337,7 +324,7 @@ void vulkan_CreateInstance(bool bPortabilityEnumerationActive)
     VULKAN_GET_PROC_ADDR(g_vulkanDriver.m_instance, CreateSwapchainKHR);
 }
 
-void vulkan_CreateSurface(const void* metalLayer)
+void kisVkCreateSurface(const void* metalLayer)
 {
     // Create surface.
     VkMetalSurfaceCreateInfoEXT surfaceCreateInfo;
@@ -348,7 +335,7 @@ void vulkan_CreateSurface(const void* metalLayer)
     VULKAN_CHECK(vkCreateMetalSurfaceEXT(g_vulkanDriver.m_instance, &surfaceCreateInfo, &g_vulkanAllocCallbacks, &g_vulkanDriver.m_surface));
 }
 
-void vulkan_PickPhysicalDevice()
+void kisVkPickPhysicalDevice()
 {
     g_vulkanDriver.m_physicalDevice = nullptr;
     g_vulkanDriver.m_iGraphicsQueueFamily = k_invalidIndex;
@@ -476,7 +463,7 @@ void vulkan_PickPhysicalDevice()
     }
 }
 
-void vulkan_CreateDevice()
+void kisVkCreateDevice()
 {
     float queuePriorities[1] = {0.0};
     VkDeviceQueueCreateInfo queues[2];
@@ -513,24 +500,14 @@ void vulkan_CreateDevice()
     VULKAN_CHECK(vkCreateDevice(g_vulkanDriver.m_physicalDevice, &deviceCreateInfos, &g_vulkanAllocCallbacks, &g_vulkanDriver.m_device));
 }
 
-void vulkan_Prepare()
+void kisVkPrepare()
 {
-    // Swapchain
+    // Surface capabilities.
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
     VULKAN_CHECK(g_vulkanFuncPtrGetPhysicalDeviceSurfaceCapabilitiesKHR(g_vulkanDriver.m_physicalDevice, g_vulkanDriver.m_surface, &surfaceCapabilities));
 
     g_vulkanDriver.m_swapchainSize = surfaceCapabilities.maxImageExtent;
 
-    // Command pool
-    ASSERT(g_vulkanDriver.m_cmdPool == nullptr);
-    VkCommandPoolCreateInfo cmdPoolCreateInfo = {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-        .pNext = NULL,
-        .queueFamilyIndex = g_vulkanDriver.m_iGraphicsQueueFamily,
-        .flags = 0,
-    };
-
-    VULKAN_CHECK(vkCreateCommandPool(g_vulkanDriver.m_device, &cmdPoolCreateInfo, &g_vulkanAllocCallbacks, &g_vulkanDriver.m_cmdPool));
 
     VkPresentModeKHR swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
 
@@ -571,6 +548,7 @@ void vulkan_Prepare()
         }
     }
 
+    // Create swapchain.
     VkSwapchainKHR oldSwapchain = g_vulkanDriver.m_swapchain;
 
     VkSwapchainCreateInfoKHR swapchainCreateInfo = {
@@ -595,20 +573,23 @@ void vulkan_Prepare()
 
     VULKAN_CHECK(vkCreateSwapchainKHR(g_vulkanDriver.m_device, &swapchainCreateInfo, &g_vulkanAllocCallbacks, &g_vulkanDriver.m_swapchain));
 
+    if(oldSwapchain != VK_NULL_HANDLE)
+    {
+        vkDestroySwapchainKHR(g_vulkanDriver.m_device, oldSwapchain, &g_vulkanAllocCallbacks);
+    }
+
+    // Get swapchain images.
     g_vulkanDriver.m_swapchainImages.fill();
     VULKAN_CHECK(vkGetSwapchainImagesKHR(g_vulkanDriver.m_device, g_vulkanDriver.m_swapchain, g_vulkanDriver.m_swapchainImages.numPointer(), g_vulkanDriver.m_swapchainImages.dataPointer()));
 
+    // Destroy old image views.
     for(int i = 0 ; i < g_vulkanDriver.m_swapchainImageViews.num(); ++i)
     {
         vkDestroyImageView(g_vulkanDriver.m_device, g_vulkanDriver.m_swapchainImageViews[i], &g_vulkanAllocCallbacks);
     }
     g_vulkanDriver.m_swapchainImageViews.empty();
 
-    if(oldSwapchain != VK_NULL_HANDLE)
-    {
-        vkDestroySwapchainKHR(g_vulkanDriver.m_device, oldSwapchain, &g_vulkanAllocCallbacks);
-    }
-
+    // Create image views.
     for(int i = 0 ; i < nSwapchainImages; ++i)
     {
         VkImageViewCreateInfo imageViewCreateInfo = {
@@ -633,9 +614,20 @@ void vulkan_Prepare()
         VULKAN_CHECK(vkCreateImageView(g_vulkanDriver.m_device, &imageViewCreateInfo, &g_vulkanAllocCallbacks, &imageView));
         g_vulkanDriver.m_swapchainImageViews.add(imageView);
     }
+
+    // Create command pool.
+    ASSERT(g_vulkanDriver.m_cmdPool == nullptr);
+    VkCommandPoolCreateInfo cmdPoolCreateInfo = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .pNext = NULL,
+        .queueFamilyIndex = g_vulkanDriver.m_iGraphicsQueueFamily,
+        .flags = 0,
+    };
+
+    VULKAN_CHECK(vkCreateCommandPool(g_vulkanDriver.m_device, &cmdPoolCreateInfo, &g_vulkanAllocCallbacks, &g_vulkanDriver.m_cmdPool));
 }
 
-void vulkan_Init(const void* metalLayer)
+void kisVkInit(const void* metalLayer)
 {
     printf("Initializing Vulkan\n");
 
@@ -644,36 +636,25 @@ void vulkan_Init(const void* metalLayer)
 
     memset(&g_vulkanAllocCallbacks, 0, sizeof(g_vulkanAllocCallbacks));
     g_vulkanAllocCallbacks.pUserData = (void*)&g_vulkanDriver;
-    g_vulkanAllocCallbacks.pfnAllocation = vulkan_Alloc;
-    g_vulkanAllocCallbacks.pfnReallocation = vulkan_Realloc;
-    g_vulkanAllocCallbacks.pfnFree = vulkan_Free;
+    g_vulkanAllocCallbacks.pfnAllocation = kisVkAlloc;
+    g_vulkanAllocCallbacks.pfnReallocation = kisVkRealloc;
+    g_vulkanAllocCallbacks.pfnFree = kisVkFree;
 
-    vulkan_InitInstanceLayers();
+    kisVkInitInstanceLayers();
 
     bool bPortabilityEnumerationActive = false;
-    vulkan_InitInstanceExtensions(bPortabilityEnumerationActive);
-    vulkan_CreateInstance(bPortabilityEnumerationActive);
-    vulkan_CreateSurface(metalLayer);
-    vulkan_PickPhysicalDevice();
-    vulkan_CreateDevice();
-    vulkan_Prepare();
+    kisVkInitInstanceExtensions(bPortabilityEnumerationActive);
+    kisVkCreateInstance(bPortabilityEnumerationActive);
+    kisVkCreateSurface(metalLayer);
+    kisVkPickPhysicalDevice();
+    kisVkCreateDevice();
+    kisVkPrepare();
 }
 
-void shutdownVulkan()
+void kisVkShutdown()
 {
     if(g_vulkanDriver.m_instance != VK_NULL_HANDLE)
     {
         vkDestroyInstance(g_vulkanDriver.m_instance, nullptr);
     }
-}
-
-
-void kisGraphics_Init(const void* metalLayer)
-{
-    vulkan_Init(metalLayer);
-}
-
-void kisGraphics_Shutdown()
-{
-
 }

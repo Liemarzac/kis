@@ -3,5 +3,10 @@
 
 void kisGraphics_Init(const void* metalLayer)
 {
-    vulkan_Init(metalLayer);
+    kisVkInit(metalLayer);
+}
+
+void kisGraphics_Shutdown()
+{
+    kisVkShutdown();
 }
