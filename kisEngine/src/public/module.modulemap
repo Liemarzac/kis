@@ -1,0 +1,5 @@
+module engine {
+    header "kisEngine/engine.h"
+
+    export *
+}
