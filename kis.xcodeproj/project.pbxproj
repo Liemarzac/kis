@@ -120,7 +120,6 @@
 		7A452DB62AE4017200700DCB /* base.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = base.h; path = src/private/base.h; sourceTree = "<group>"; };
 		7A452DB72AE4017200700DCB /* graphics.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = graphics.cpp; path = src/private/graphics.cpp; sourceTree = "<group>"; };
 		7A452DB92AE4018000700DCB /* vulkan.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vulkan.h; path = src/private/vulkan/vulkan.h; sourceTree = "<group>"; };
-		7A452DBA2AE4018000700DCB /* vulkan.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = vulkan.hpp; path = src/private/vulkan/vulkan.hpp; sourceTree = "<group>"; };
 		7A452DBB2AE4018000700DCB /* vulkan.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = vulkan.cpp; path = src/private/vulkan/vulkan.cpp; sourceTree = "<group>"; };
 		7A452DBD2AE4018C00700DCB /* graphics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = graphics.h; path = src/public/kisGraphics/graphics.h; sourceTree = "<group>"; };
 		7A452DC22AE42AA600700DCB /* libkisEngine.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libkisEngine.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -250,7 +249,6 @@
 				7A452DBD2AE4018C00700DCB /* graphics.h */,
 				7A452DBB2AE4018000700DCB /* vulkan.cpp */,
 				7A452DB92AE4018000700DCB /* vulkan.h */,
-				7A452DBA2AE4018000700DCB /* vulkan.hpp */,
 				7A452DB62AE4017200700DCB /* base.h */,
 				7A452DB72AE4017200700DCB /* graphics.cpp */,
 			);
