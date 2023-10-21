@@ -25,12 +25,12 @@
 		7A452D9D2AE4007C00700DCB /* core.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A452D9B2AE4007C00700DCB /* core.cpp */; };
 		7A452D9E2AE4007C00700DCB /* ring_buffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A452D9C2AE4007C00700DCB /* ring_buffer.cpp */; };
 		7A452DB82AE4017200700DCB /* graphics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A452DB72AE4017200700DCB /* graphics.cpp */; };
-		7A452DBC2AE4018000700DCB /* vulkan.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A452DBB2AE4018000700DCB /* vulkan.cpp */; };
 		7A452DCA2AE42AFE00700DCB /* engine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A452DC92AE42AFE00700DCB /* engine.cpp */; };
 		7A452DD72AE431FF00700DCB /* libkisEngine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A452DC22AE42AA600700DCB /* libkisEngine.a */; };
 		7A452DD82AE4320D00700DCB /* libkisCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A452D942AE4002E00700DCB /* libkisCore.a */; };
 		7A452DD92AE4321400700DCB /* libkisCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A452D942AE4002E00700DCB /* libkisCore.a */; };
 		7A452DDA2AE4321A00700DCB /* libkisGraphics.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A452DA72AE400FC00700DCB /* libkisGraphics.a */; };
+		7A452DDD2AE485A200700DCB /* kisVulkan.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A452DDB2AE485A100700DCB /* kisVulkan.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -119,13 +119,13 @@
 		7A452DA72AE400FC00700DCB /* libkisGraphics.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libkisGraphics.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		7A452DB62AE4017200700DCB /* base.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = base.h; path = src/private/base.h; sourceTree = "<group>"; };
 		7A452DB72AE4017200700DCB /* graphics.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = graphics.cpp; path = src/private/graphics.cpp; sourceTree = "<group>"; };
-		7A452DB92AE4018000700DCB /* vulkan.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vulkan.h; path = src/private/vulkan/vulkan.h; sourceTree = "<group>"; };
-		7A452DBB2AE4018000700DCB /* vulkan.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = vulkan.cpp; path = src/private/vulkan/vulkan.cpp; sourceTree = "<group>"; };
 		7A452DBD2AE4018C00700DCB /* graphics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = graphics.h; path = src/public/kisGraphics/graphics.h; sourceTree = "<group>"; };
 		7A452DC22AE42AA600700DCB /* libkisEngine.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libkisEngine.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		7A452DC92AE42AFE00700DCB /* engine.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = engine.cpp; path = src/private/engine.cpp; sourceTree = "<group>"; };
 		7A452DCC2AE42B1A00700DCB /* engine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = engine.h; path = src/public/kisEngine/engine.h; sourceTree = "<group>"; };
 		7A452DCD2AE42DA700700DCB /* module.modulemap */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = "sourcecode.module-map"; name = module.modulemap; path = src/public/module.modulemap; sourceTree = "<group>"; };
+		7A452DDB2AE485A100700DCB /* kisVulkan.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = kisVulkan.cpp; path = src/private/kisVulkan/kisVulkan.cpp; sourceTree = "<group>"; };
+		7A452DDC2AE485A200700DCB /* kisVulkan.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = kisVulkan.h; path = src/private/kisVulkan/kisVulkan.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -246,9 +246,9 @@
 		7A452DA82AE400FC00700DCB /* kisGraphics */ = {
 			isa = PBXGroup;
 			children = (
+				7A452DDB2AE485A100700DCB /* kisVulkan.cpp */,
+				7A452DDC2AE485A200700DCB /* kisVulkan.h */,
 				7A452DBD2AE4018C00700DCB /* graphics.h */,
-				7A452DBB2AE4018000700DCB /* vulkan.cpp */,
-				7A452DB92AE4018000700DCB /* vulkan.h */,
 				7A452DB62AE4017200700DCB /* base.h */,
 				7A452DB72AE4017200700DCB /* graphics.cpp */,
 			);
@@ -473,7 +473,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7A452DBC2AE4018000700DCB /* vulkan.cpp in Sources */,
+				7A452DDD2AE485A200700DCB /* kisVulkan.cpp in Sources */,
 				7A452DB82AE4017200700DCB /* graphics.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
