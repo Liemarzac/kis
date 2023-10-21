@@ -18,6 +18,8 @@ const int k_invalidIndex = -1;
 static bool s_bBreakOnValidationCallback = true;
 
 PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR g_vulkanFuncPtrGetPhysicalDeviceSurfaceCapabilitiesKHR = nullptr;
+PFN_vkGetPhysicalDeviceSurfaceFormatsKHR g_vulkanFuncPtrGetPhysicalDeviceSurfaceFormatsKHR = nullptr;
+PFN_vkCreateSwapchainKHR g_vulkanFuncPtrCreateSwapchainKHR = nullptr;
 
 #define VULKAN_GET_PROC_ADDR(inst, entrypoint)                                                                \
     {                                                                                                         \
@@ -34,6 +36,8 @@ struct VulkanDriver
     VkSurfaceKHR m_surface;
     VkCommandPool m_cmdPool;
     VkSwapchainKHR m_swapchain;
+    VkSurfaceFormatKHR m_surfaceFormat;
+    VkExtent2D m_swapchainSize;
     uint32_t m_iGraphicsQueueFamily;
     uint32_t m_iPresentQueueFamily;
     bool m_bValidate;
@@ -327,6 +331,8 @@ void vulkan_CreateInstance(bool bPortabilityEnumerationActive)
     VULKAN_CHECK(vkCreateInstance(&instanceCreateInfo, &g_vulkanAllocCallbacks, &g_vulkanDriver.m_instance));
 
     VULKAN_GET_PROC_ADDR(g_vulkanDriver.m_instance, GetPhysicalDeviceSurfaceCapabilitiesKHR);
+    VULKAN_GET_PROC_ADDR(g_vulkanDriver.m_instance, GetPhysicalDeviceSurfaceFormatsKHR);
+    VULKAN_GET_PROC_ADDR(g_vulkanDriver.m_instance, CreateSwapchainKHR);
 }
 
 void vulkan_CreateSurface(const void* metalLayer)
@@ -448,6 +454,24 @@ void vulkan_PickPhysicalDevice()
         }
     }
     logTableFooter();
+
+    //demo->fpGetPhysicalDeviceSurfaceFormatsKHR(demo->gpu, demo->surface, &formatCount, surfFormats);
+    ArrayStatic<VkSurfaceFormatKHR, 256> surfaceFormats(ArrayStatic_Init::Fill);
+    g_vulkanFuncPtrGetPhysicalDeviceSurfaceFormatsKHR(g_vulkanDriver.m_physicalDevice, g_vulkanDriver.m_surface, surfaceFormats.numPointer(), surfaceFormats.dataPointer());
+
+    for(const VkSurfaceFormatKHR& surfaceFormat : surfaceFormats)
+    {
+        const VkFormat format = surfaceFormat.format;
+
+        if (format == VK_FORMAT_R8G8B8A8_UNORM || format == VK_FORMAT_B8G8R8A8_UNORM ||
+            format == VK_FORMAT_A2B10G10R10_UNORM_PACK32 || format == VK_FORMAT_A2R10G10B10_UNORM_PACK32 ||
+            format == VK_FORMAT_A1R5G5B5_UNORM_PACK16 || format == VK_FORMAT_R5G6B5_UNORM_PACK16 ||
+            format == VK_FORMAT_R16G16B16A16_SFLOAT)
+        {
+            g_vulkanDriver.m_surfaceFormat = surfaceFormat;
+            break;
+        }
+    }
 }
 
 void vulkan_CreateDevice()
@@ -493,6 +517,8 @@ void vulkan_Prepare()
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
     VULKAN_CHECK(g_vulkanFuncPtrGetPhysicalDeviceSurfaceCapabilitiesKHR(g_vulkanDriver.m_physicalDevice, g_vulkanDriver.m_surface, &surfaceCapabilities));
 
+    g_vulkanDriver.m_swapchainSize = surfaceCapabilities.maxImageExtent;
+
     // Command pool
     ASSERT(g_vulkanDriver.m_cmdPool == nullptr);
     VkCommandPoolCreateInfo cmdPoolCreateInfo = {
@@ -503,6 +529,70 @@ void vulkan_Prepare()
     };
 
     VULKAN_CHECK(vkCreateCommandPool(g_vulkanDriver.m_device, &cmdPoolCreateInfo, &g_vulkanAllocCallbacks, &g_vulkanDriver.m_cmdPool));
+
+    VkPresentModeKHR swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+
+    uint32_t nSwapchainImages = 3;
+    if(surfaceCapabilities.maxImageCount > 0 && nSwapchainImages > surfaceCapabilities.maxImageCount)
+    {
+        nSwapchainImages = surfaceCapabilities.maxImageCount;
+    }
+
+    if(nSwapchainImages < surfaceCapabilities.minImageCount)
+    {
+        nSwapchainImages = surfaceCapabilities.minImageCount;
+    }
+
+    VkSurfaceTransformFlagBitsKHR preTransform;
+    if (surfaceCapabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
+    {
+        preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    }
+    else
+    {
+        preTransform = surfaceCapabilities.currentTransform;
+    }
+
+    // Find a supported composite alpha mode - one of these is guaranteed to be set
+    VkCompositeAlphaFlagBitsKHR compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    const uint32_t k_nCompositeAlphaFlags = 4;
+    VkCompositeAlphaFlagBitsKHR compositeAlphaFlags[k_nCompositeAlphaFlags] = {
+        VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+        VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR,
+        VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR,
+        VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR,
+    };
+
+    for (uint32_t i = 0; i < k_nCompositeAlphaFlags; i++)
+    {
+        if ((surfaceCapabilities.supportedCompositeAlpha & compositeAlphaFlags[i]) != 0)
+        {
+            compositeAlpha = compositeAlphaFlags[i];
+            break;
+        }
+    }
+
+    VkSwapchainCreateInfoKHR swapchainCreateInfo = {
+        .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+        .pNext = nullptr,
+        .surface = g_vulkanDriver.m_surface,
+        .minImageCount = nSwapchainImages,
+        .imageFormat = g_vulkanDriver.m_surfaceFormat.format,
+        .imageColorSpace = g_vulkanDriver.m_surfaceFormat.colorSpace,
+        .imageExtent = g_vulkanDriver.m_swapchainSize,
+        .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        .preTransform = preTransform,
+        .compositeAlpha = compositeAlpha,
+        .imageArrayLayers = 1,
+        .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .queueFamilyIndexCount = 0,
+        .pQueueFamilyIndices = NULL,
+        .presentMode = swapchainPresentMode,
+        .oldSwapchain = nullptr,
+        .clipped = true,
+    };
+
+    VULKAN_CHECK(g_vulkanFuncPtrCreateSwapchainKHR(g_vulkanDriver.m_device, &swapchainCreateInfo, nullptr, &g_vulkanDriver.m_swapchain));
 }
 
 void vulkan_Init(const void* metalLayer)
