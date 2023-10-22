@@ -1,9 +1,9 @@
-#include "kisVulkan.h"
+#include "kisVk.h"
 
 #include <MoltenVK/mvk_vulkan.h>
 
-#include <kisCore/ansi_string_static.h>
-#include <kisCore/array_static.h>
+#include <kisCore/kisStringANSIStatic.h>
+#include <kisCore/kisArrayStatic.h>
 
 #include <stdlib.h>
 
@@ -11,22 +11,22 @@
 #include <signal.h>
 #endif
 
-typedef ArrayStatic<const char*,64> ExtensionNameArray;
-
-const int k_invalidIndex = -1;
-
-static bool s_bBreakOnValidationCallback = true;
-
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR g_vulkanFuncPtrGetPhysicalDeviceSurfaceCapabilitiesKHR = nullptr;
 PFN_vkGetPhysicalDeviceSurfaceFormatsKHR g_vulkanFuncPtrGetPhysicalDeviceSurfaceFormatsKHR = nullptr;
 PFN_vkCreateSwapchainKHR g_vulkanFuncPtrCreateSwapchainKHR = nullptr;
 
-#define VULKAN_GET_PROC_ADDR(inst, entrypoint)                                                                \
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+#define KIS_VK_GET_PROC_ADDR(inst, entrypoint)                                                                \
     {                                                                                                         \
         g_vulkanFuncPtr##entrypoint = (PFN_vk##entrypoint)vkGetInstanceProcAddr(inst, "vk" #entrypoint);      \
-        ASSERT(g_vulkanFuncPtr##entrypoint != nullptr);                                                       \
+        KIS_ASSERT(g_vulkanFuncPtr##entrypoint != nullptr);                                                   \
     }
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 struct kisVkInfo
 {
     VkInstance m_instance;
@@ -41,24 +41,33 @@ struct kisVkInfo
     uint32_t m_iGraphicsQueueFamily;
     uint32_t m_iPresentQueueFamily;
     bool m_bValidate;
-    ArrayStatic<const char*, 64> m_instanceExtensionNames;
-    ArrayStatic<const char*, 64> m_deviceExtensionNames;
-    ArrayStatic<const char*, 16> m_layerNames;
-    ArrayStatic<VkImage, 3> m_swapchainImages;
-    ArrayStatic<VkImageView, 3> m_swapchainImageViews;
+    kisArrayStatic<const char*, 64> m_instanceExtensionNames;
+    kisArrayStatic<const char*, 64> m_deviceExtensionNames;
+    kisArrayStatic<const char*, 16> m_layerNames;
+    kisArrayStatic<VkImage, 3> m_swapchainImages;
+    kisArrayStatic<VkImageView, 3> m_swapchainImageViews;
 };
 
-kisVkInfo g_vulkanDriver;
-VkAllocationCallbacks g_vulkanAllocCallbacks;
-
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 struct kisVkMemBlock
 {
     void* m_pointer;
     size_t m_size;
 };
 
-ArrayStatic<kisVkMemBlock, 2048> g_vulkanMemBlocks;
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+kisVkInfo g_vulkanDriver;
+VkAllocationCallbacks g_vulkanAllocCallbacks;
+kisArrayStatic<kisVkMemBlock, 2048> g_vulkanMemBlocks;
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+static bool s_bBreakOnValidationCallback = true;
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 void* kisVkAlloc(
     void*                       pUserData,
     size_t                      size,
@@ -75,6 +84,8 @@ void* kisVkAlloc(
     return pointer;
 }
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 void* kisVkRealloc(
     void*                       pUserData,
     void*                       pOriginal,
@@ -111,6 +122,8 @@ void* kisVkRealloc(
     return newPointer;
 }
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 void kisVkFree(void* pUserData, void* pointer)
 {
     for(uint32_t i = 0; i < g_vulkanMemBlocks.num(); ++i)
@@ -124,6 +137,8 @@ void kisVkFree(void* pUserData, void* pointer)
     }
 }
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 VkBool32 kisVkDebugMessengerCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -131,7 +146,7 @@ VkBool32 kisVkDebugMessengerCallback(
     void* userData
 )
 {
-    ANSIStringStatic<1024> message;
+    kisStringANSIStatic<1024> message;
 
     if (s_bBreakOnValidationCallback)
     {
@@ -190,10 +205,12 @@ VkBool32 kisVkDebugMessengerCallback(
     return false;
 }
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 void kisVkInitInstanceLayers()
 {
     const uint32_t k_maxEntries = 100;
-    ArrayStatic<VkLayerProperties, k_maxEntries> propertiesArray(ArrayStatic_Init::Fill);
+    kisArrayStatic<VkLayerProperties, k_maxEntries> propertiesArray(kisArrayStaticInit::Fill);
 
     bool bValidationLayerActive = false;
     
@@ -201,10 +218,10 @@ void kisVkInitInstanceLayers()
 
     const char* k_validationLayerName = "VK_LAYER_KHRONOS_validation";
 
-    logTableHeader("Instance layers");
+    kisLogTableHeader("Instance layers");
     for(const VkLayerProperties& properties : propertiesArray)
     {
-        logTableEntry(properties.layerName);
+        kisLogTableEntry(properties.layerName);
         if(strcmp(properties.layerName, k_validationLayerName) == 0)
         {
             if(g_vulkanDriver.m_bValidate)
@@ -214,7 +231,7 @@ void kisVkInitInstanceLayers()
             }
         }
     }
-    logTableFooter();
+    kisLogTableFooter();
 
     if(!bValidationLayerActive)
     {
@@ -222,10 +239,12 @@ void kisVkInitInstanceLayers()
     }
 }
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 void kisVkInitInstanceExtensions(bool& bPortabilityEnumerationActive)
 {
     const uint32_t k_maxEntries = 100;
-    ArrayStatic<VkExtensionProperties, k_maxEntries> propertiesArray(ArrayStatic_Init::Fill);
+    kisArrayStatic<VkExtensionProperties, k_maxEntries> propertiesArray(kisArrayStaticInit::Fill);
 
     vkEnumerateInstanceExtensionProperties(VK_NULL_HANDLE, propertiesArray.numPointer(), propertiesArray.dataPointer());
 
@@ -234,10 +253,10 @@ void kisVkInitInstanceExtensions(bool& bPortabilityEnumerationActive)
     bool bSurfaceExtensionFound = false;
     bool bMetalSurfaceExtensionFound = false;
 
-    logTableHeader("Instance extensions");
+    kisLogTableHeader("Instance extensions");
     for(const VkExtensionProperties& properties : propertiesArray)
     {
-        logTableEntry(properties.extensionName);
+        kisLogTableEntry(properties.extensionName);
         if(strcmp(properties.extensionName, VK_KHR_SURFACE_EXTENSION_NAME) == 0)
         {
             g_vulkanDriver.m_instanceExtensionNames.add(VK_KHR_SURFACE_EXTENSION_NAME);
@@ -265,12 +284,14 @@ void kisVkInitInstanceExtensions(bool& bPortabilityEnumerationActive)
             bPortabilityEnumerationActive = true;
         }
     }
-    logTableFooter();
+    kisLogTableFooter();
 
-    ASSERT(bSurfaceExtensionFound);
-    ASSERT(bMetalSurfaceExtensionFound);
+    KIS_ASSERT(bSurfaceExtensionFound);
+    KIS_ASSERT(bMetalSurfaceExtensionFound);
 }
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 void kisVkCreateInstance(bool bPortabilityEnumerationActive)
 {
     const VkApplicationInfo app = {
@@ -317,13 +338,15 @@ void kisVkCreateInstance(bool bPortabilityEnumerationActive)
         instanceCreateInfo.pNext = &dbgMessengerCreateInfo;
     }
 
-    VULKAN_CHECK(vkCreateInstance(&instanceCreateInfo, &g_vulkanAllocCallbacks, &g_vulkanDriver.m_instance));
+    KIS_VK_CHECK(vkCreateInstance(&instanceCreateInfo, &g_vulkanAllocCallbacks, &g_vulkanDriver.m_instance));
 
-    VULKAN_GET_PROC_ADDR(g_vulkanDriver.m_instance, GetPhysicalDeviceSurfaceCapabilitiesKHR);
-    VULKAN_GET_PROC_ADDR(g_vulkanDriver.m_instance, GetPhysicalDeviceSurfaceFormatsKHR);
-    VULKAN_GET_PROC_ADDR(g_vulkanDriver.m_instance, CreateSwapchainKHR);
+    KIS_VK_GET_PROC_ADDR(g_vulkanDriver.m_instance, GetPhysicalDeviceSurfaceCapabilitiesKHR);
+    KIS_VK_GET_PROC_ADDR(g_vulkanDriver.m_instance, GetPhysicalDeviceSurfaceFormatsKHR);
+    KIS_VK_GET_PROC_ADDR(g_vulkanDriver.m_instance, CreateSwapchainKHR);
 }
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 void kisVkCreateSurface(const void* metalLayer)
 {
     // Create surface.
@@ -332,24 +355,26 @@ void kisVkCreateSurface(const void* metalLayer)
     surfaceCreateInfo.pNext = VK_NULL_HANDLE;
     surfaceCreateInfo.flags = 0;
     surfaceCreateInfo.pLayer = metalLayer;
-    VULKAN_CHECK(vkCreateMetalSurfaceEXT(g_vulkanDriver.m_instance, &surfaceCreateInfo, &g_vulkanAllocCallbacks, &g_vulkanDriver.m_surface));
+    KIS_VK_CHECK(vkCreateMetalSurfaceEXT(g_vulkanDriver.m_instance, &surfaceCreateInfo, &g_vulkanAllocCallbacks, &g_vulkanDriver.m_surface));
 }
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 void kisVkPickPhysicalDevice()
 {
     g_vulkanDriver.m_physicalDevice = nullptr;
-    g_vulkanDriver.m_iGraphicsQueueFamily = k_invalidIndex;
-    g_vulkanDriver.m_iPresentQueueFamily = k_invalidIndex;
+    g_vulkanDriver.m_iGraphicsQueueFamily = k_kisCoreInvalidIndex;
+    g_vulkanDriver.m_iPresentQueueFamily = k_kisCoreInvalidIndex;
     
     const uint32_t k_maxPhysicalDevices = 16;
-    ArrayStatic<VkPhysicalDevice, k_maxPhysicalDevices> physicalDevices(ArrayStatic_Init::Fill);
+    kisArrayStatic<VkPhysicalDevice, k_maxPhysicalDevices> physicalDevices(kisArrayStaticInit::Fill);
 
-    VULKAN_CHECK(vkEnumeratePhysicalDevices(g_vulkanDriver.m_instance, physicalDevices.numPointer(), physicalDevices.dataPointer()));
+    KIS_VK_CHECK(vkEnumeratePhysicalDevices(g_vulkanDriver.m_instance, physicalDevices.numPointer(), physicalDevices.dataPointer()));
 
     const uint32_t k_maxQueueFamilityProperties = 32;
-    ArrayStatic<VkQueueFamilyProperties, k_maxQueueFamilityProperties> queueFamilyProperties(ArrayStatic_Init::Fill);
+    kisArrayStatic<VkQueueFamilyProperties, k_maxQueueFamilityProperties> queueFamilyProperties(kisArrayStaticInit::Fill);
 
-    int iBestDevice = k_invalidIndex;
+    int iBestDevice = k_kisCoreInvalidIndex;
     uint32_t bestImageDimension = 0;
     bool bFoundDiscreteGPU = false;
 
@@ -362,12 +387,12 @@ void kisVkPickPhysicalDevice()
         vkGetPhysicalDeviceQueueFamilyProperties(device, queueFamilyProperties.numPointer(), queueFamilyProperties.dataPointer());
 
         // Make sure that the physical device supports both graphics and present.
-        int iGraphicsQueueFamily = k_invalidIndex;
-        int iPresentQueueFamily = k_invalidIndex;
+        int iGraphicsQueueFamily = k_kisCoreInvalidIndex;
+        int iPresentQueueFamily = k_kisCoreInvalidIndex;
 
         for(uint32_t iQueueFamilyProperty = 0; iQueueFamilyProperty < queueFamilyProperties.num(); ++iQueueFamilyProperty)
         {
-            if(iGraphicsQueueFamily == k_invalidIndex)
+            if(iGraphicsQueueFamily == k_kisCoreInvalidIndex)
             {
                 if((queueFamilyProperties[iQueueFamilyProperty].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0)
                 {
@@ -375,7 +400,7 @@ void kisVkPickPhysicalDevice()
                 }
             }
 
-            if(iPresentQueueFamily == k_invalidIndex)
+            if(iPresentQueueFamily == k_kisCoreInvalidIndex)
             {
                 VkBool32 bSupportPresent = false;
                 vkGetPhysicalDeviceSurfaceSupportKHR(device, iQueueFamilyProperty, g_vulkanDriver.m_surface, &bSupportPresent);
@@ -385,14 +410,14 @@ void kisVkPickPhysicalDevice()
                 }
             }
 
-            if(iGraphicsQueueFamily != k_invalidIndex && iPresentQueueFamily != k_invalidIndex)
+            if(iGraphicsQueueFamily != k_kisCoreInvalidIndex && iPresentQueueFamily != k_kisCoreInvalidIndex)
             {
                 // We have found both queue families we were looing for.
                 break;
             }
         }
 
-        if(iGraphicsQueueFamily == k_invalidIndex || iPresentQueueFamily == k_invalidIndex)
+        if(iGraphicsQueueFamily == k_kisCoreInvalidIndex || iPresentQueueFamily == k_kisCoreInvalidIndex)
         {
             // The physical device does not present or graphics queues.
             continue;
@@ -418,20 +443,20 @@ void kisVkPickPhysicalDevice()
         }
     }
 
-    ASSERT(g_vulkanDriver.m_physicalDevice != nullptr);
-    ASSERT(g_vulkanDriver.m_iPresentQueueFamily != k_invalidIndex);
-    ASSERT(g_vulkanDriver.m_iPresentQueueFamily != k_invalidIndex);
+    KIS_ASSERT(g_vulkanDriver.m_physicalDevice != nullptr);
+    KIS_ASSERT(g_vulkanDriver.m_iPresentQueueFamily != k_kisCoreInvalidIndex);
+    KIS_ASSERT(g_vulkanDriver.m_iPresentQueueFamily != k_kisCoreInvalidIndex);
     
     const uint32_t k_maxDeviceExtensionProperties = 256;
-    ArrayStatic<VkExtensionProperties, k_maxDeviceExtensionProperties> deviceExtensionProperties(ArrayStatic_Init::Fill);
+    kisArrayStatic<VkExtensionProperties, k_maxDeviceExtensionProperties> deviceExtensionProperties(kisArrayStaticInit::Fill);
     vkEnumerateDeviceExtensionProperties(g_vulkanDriver.m_physicalDevice, nullptr, deviceExtensionProperties.numPointer(), deviceExtensionProperties.dataPointer());
     bool bSwapchainFound = false;
     const char* k_portabilitySubsetExtensioName = "VK_KHR_portability_subset";
  
-    logTableHeader("Device properties");
+    kisLogTableHeader("Device properties");
     for(const VkExtensionProperties& properties : deviceExtensionProperties)
     {
-        logTableEntry(properties.extensionName);
+        kisLogTableEntry(properties.extensionName);
         if (strcmp(VK_KHR_SWAPCHAIN_EXTENSION_NAME, properties.extensionName) == 0)
         {
             bSwapchainFound = true;
@@ -442,10 +467,10 @@ void kisVkPickPhysicalDevice()
             g_vulkanDriver.m_deviceExtensionNames.add(k_portabilitySubsetExtensioName);
         }
     }
-    logTableFooter();
+    kisLogTableFooter();
 
     //demo->fpGetPhysicalDeviceSurfaceFormatsKHR(demo->gpu, demo->surface, &formatCount, surfFormats);
-    ArrayStatic<VkSurfaceFormatKHR, 64> surfaceFormats(ArrayStatic_Init::Fill);
+    kisArrayStatic<VkSurfaceFormatKHR, 64> surfaceFormats(kisArrayStaticInit::Fill);
     g_vulkanFuncPtrGetPhysicalDeviceSurfaceFormatsKHR(g_vulkanDriver.m_physicalDevice, g_vulkanDriver.m_surface, surfaceFormats.numPointer(), surfaceFormats.dataPointer());
 
     for(const VkSurfaceFormatKHR& surfaceFormat : surfaceFormats)
@@ -463,6 +488,8 @@ void kisVkPickPhysicalDevice()
     }
 }
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 void kisVkCreateDevice()
 {
     float queuePriorities[1] = {0.0};
@@ -497,14 +524,16 @@ void kisVkCreateDevice()
         deviceCreateInfos.queueCreateInfoCount = 2;
     }
 
-    VULKAN_CHECK(vkCreateDevice(g_vulkanDriver.m_physicalDevice, &deviceCreateInfos, &g_vulkanAllocCallbacks, &g_vulkanDriver.m_device));
+    KIS_VK_CHECK(vkCreateDevice(g_vulkanDriver.m_physicalDevice, &deviceCreateInfos, &g_vulkanAllocCallbacks, &g_vulkanDriver.m_device));
 }
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 void kisVkPrepare()
 {
     // Surface capabilities.
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
-    VULKAN_CHECK(g_vulkanFuncPtrGetPhysicalDeviceSurfaceCapabilitiesKHR(g_vulkanDriver.m_physicalDevice, g_vulkanDriver.m_surface, &surfaceCapabilities));
+    KIS_VK_CHECK(g_vulkanFuncPtrGetPhysicalDeviceSurfaceCapabilitiesKHR(g_vulkanDriver.m_physicalDevice, g_vulkanDriver.m_surface, &surfaceCapabilities));
 
     g_vulkanDriver.m_swapchainSize = surfaceCapabilities.maxImageExtent;
 
@@ -517,7 +546,7 @@ void kisVkPrepare()
         nSwapchainImages = surfaceCapabilities.maxImageCount;
     }
 
-    ASSERT(nSwapchainImages >= surfaceCapabilities.minImageCount);
+    KIS_ASSERT(nSwapchainImages >= surfaceCapabilities.minImageCount);
 
     VkSurfaceTransformFlagBitsKHR preTransform;
     if (surfaceCapabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
@@ -571,7 +600,7 @@ void kisVkPrepare()
         .clipped = true,
     };
 
-    VULKAN_CHECK(vkCreateSwapchainKHR(g_vulkanDriver.m_device, &swapchainCreateInfo, &g_vulkanAllocCallbacks, &g_vulkanDriver.m_swapchain));
+    KIS_VK_CHECK(vkCreateSwapchainKHR(g_vulkanDriver.m_device, &swapchainCreateInfo, &g_vulkanAllocCallbacks, &g_vulkanDriver.m_swapchain));
 
     if(oldSwapchain != VK_NULL_HANDLE)
     {
@@ -580,7 +609,7 @@ void kisVkPrepare()
 
     // Get swapchain images.
     g_vulkanDriver.m_swapchainImages.fill();
-    VULKAN_CHECK(vkGetSwapchainImagesKHR(g_vulkanDriver.m_device, g_vulkanDriver.m_swapchain, g_vulkanDriver.m_swapchainImages.numPointer(), g_vulkanDriver.m_swapchainImages.dataPointer()));
+    KIS_VK_CHECK(vkGetSwapchainImagesKHR(g_vulkanDriver.m_device, g_vulkanDriver.m_swapchain, g_vulkanDriver.m_swapchainImages.numPointer(), g_vulkanDriver.m_swapchainImages.dataPointer()));
 
     // Destroy old image views.
     for(int i = 0 ; i < g_vulkanDriver.m_swapchainImageViews.num(); ++i)
@@ -611,12 +640,12 @@ void kisVkPrepare()
         };
 
         VkImageView imageView = VK_NULL_HANDLE;
-        VULKAN_CHECK(vkCreateImageView(g_vulkanDriver.m_device, &imageViewCreateInfo, &g_vulkanAllocCallbacks, &imageView));
+        KIS_VK_CHECK(vkCreateImageView(g_vulkanDriver.m_device, &imageViewCreateInfo, &g_vulkanAllocCallbacks, &imageView));
         g_vulkanDriver.m_swapchainImageViews.add(imageView);
     }
 
     // Create command pool.
-    ASSERT(g_vulkanDriver.m_cmdPool == nullptr);
+    KIS_ASSERT(g_vulkanDriver.m_cmdPool == nullptr);
     VkCommandPoolCreateInfo cmdPoolCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .pNext = NULL,
@@ -624,9 +653,11 @@ void kisVkPrepare()
         .flags = 0,
     };
 
-    VULKAN_CHECK(vkCreateCommandPool(g_vulkanDriver.m_device, &cmdPoolCreateInfo, &g_vulkanAllocCallbacks, &g_vulkanDriver.m_cmdPool));
+    KIS_VK_CHECK(vkCreateCommandPool(g_vulkanDriver.m_device, &cmdPoolCreateInfo, &g_vulkanAllocCallbacks, &g_vulkanDriver.m_cmdPool));
 }
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 void kisVkInit(const void* metalLayer)
 {
     printf("Initializing Vulkan\n");
@@ -651,6 +682,8 @@ void kisVkInit(const void* metalLayer)
     kisVkPrepare();
 }
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 void kisVkShutdown()
 {
     if(g_vulkanDriver.m_instance != VK_NULL_HANDLE)

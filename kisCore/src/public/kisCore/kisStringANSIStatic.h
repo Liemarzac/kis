@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core.h"
+#include "kisCore.h"
 
 #include <cstdio>
 #include <cstring>

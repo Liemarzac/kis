@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core.h"
+#include "kisCore.h"
 
 enum class kisArrayStaticInit
 {
@@ -25,14 +25,14 @@ public:
 
     void add(const T& elem)
     {
-        ASSERT(m_nElements < MaxCount);
+        KIS_ASSERT(m_nElements < MaxCount);
         m_elements[m_nElements] = elem;
         m_nElements++;
     }
     
     void removeUnordered(uint32_t index)
     {
-        ASSERT(index < m_nElements);
+        KIS_ASSERT(index < m_nElements);
         if(index < m_nElements - 1)
         {
             m_elements[index] = m_elements[m_nElements - 1];

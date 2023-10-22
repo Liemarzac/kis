@@ -1,5 +1,5 @@
-#include "graphics.h"
-#include "kisVulkan/kisVulkan.h"
+#include "kisGraphics.h"
+#include "kisVk/kisVk.h"
 
 void kisGraphicsInit(const void* metalLayer)
 {

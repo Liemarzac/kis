@@ -22,15 +22,14 @@
 		7A452D852AE4000200700DCB /* ShaderTypes.h in Resources */ = {isa = PBXBuildFile; fileRef = 7A452D5F2AE4000000700DCB /* ShaderTypes.h */; };
 		7A452D862AE4000200700DCB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7A452D602AE4000200700DCB /* Assets.xcassets */; };
 		7A452D872AE4000200700DCB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7A452D602AE4000200700DCB /* Assets.xcassets */; };
-		7A452D9D2AE4007C00700DCB /* core.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A452D9B2AE4007C00700DCB /* core.cpp */; };
-		7A452D9E2AE4007C00700DCB /* ring_buffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A452D9C2AE4007C00700DCB /* ring_buffer.cpp */; };
-		7A452DB82AE4017200700DCB /* graphics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A452DB72AE4017200700DCB /* graphics.cpp */; };
+		7A452D9D2AE4007C00700DCB /* kisCore.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A452D9B2AE4007C00700DCB /* kisCore.cpp */; };
 		7A452DCA2AE42AFE00700DCB /* engine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A452DC92AE42AFE00700DCB /* engine.cpp */; };
 		7A452DD72AE431FF00700DCB /* libkisEngine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A452DC22AE42AA600700DCB /* libkisEngine.a */; };
 		7A452DD82AE4320D00700DCB /* libkisCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A452D942AE4002E00700DCB /* libkisCore.a */; };
 		7A452DD92AE4321400700DCB /* libkisCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A452D942AE4002E00700DCB /* libkisCore.a */; };
 		7A452DDA2AE4321A00700DCB /* libkisGraphics.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A452DA72AE400FC00700DCB /* libkisGraphics.a */; };
-		7A452DDD2AE485A200700DCB /* kisVulkan.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A452DDB2AE485A100700DCB /* kisVulkan.cpp */; };
+		7A452DE12AE542AC00700DCB /* kisGraphics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A452DDF2AE542AC00700DCB /* kisGraphics.cpp */; };
+		7A452DE92AE5437C00700DCB /* kisVk.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A452DE82AE5437C00700DCB /* kisVk.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -110,22 +109,20 @@
 		7A452D7D2AE4000200700DCB /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		7A452D7F2AE4000200700DCB /* kis_macOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = kis_macOS.entitlements; sourceTree = "<group>"; };
 		7A452D942AE4002E00700DCB /* libkisCore.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libkisCore.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		7A452D9B2AE4007C00700DCB /* core.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = core.cpp; path = src/private/core.cpp; sourceTree = "<group>"; };
-		7A452D9C2AE4007C00700DCB /* ring_buffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ring_buffer.cpp; path = src/private/ring_buffer.cpp; sourceTree = "<group>"; };
-		7A452D9F2AE4008C00700DCB /* ansi_string_static.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ansi_string_static.h; path = src/public/kisCore/ansi_string_static.h; sourceTree = "<group>"; };
-		7A452DA02AE4008C00700DCB /* array_static.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = array_static.h; path = src/public/kisCore/array_static.h; sourceTree = "<group>"; };
-		7A452DA12AE4008C00700DCB /* core.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = core.h; path = src/public/kisCore/core.h; sourceTree = "<group>"; };
-		7A452DA22AE4008C00700DCB /* ring_buffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ring_buffer.h; path = src/public/kisCore/ring_buffer.h; sourceTree = "<group>"; };
+		7A452D9B2AE4007C00700DCB /* kisCore.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = kisCore.cpp; path = src/private/kisCore.cpp; sourceTree = "<group>"; };
+		7A452D9F2AE4008C00700DCB /* kisStringANSIStatic.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = kisStringANSIStatic.h; path = src/public/kisCore/kisStringANSIStatic.h; sourceTree = "<group>"; };
+		7A452DA02AE4008C00700DCB /* kisArrayStatic.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = kisArrayStatic.h; path = src/public/kisCore/kisArrayStatic.h; sourceTree = "<group>"; };
+		7A452DA12AE4008C00700DCB /* kisCore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = kisCore.h; path = src/public/kisCore/kisCore.h; sourceTree = "<group>"; };
 		7A452DA72AE400FC00700DCB /* libkisGraphics.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libkisGraphics.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		7A452DB62AE4017200700DCB /* base.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = base.h; path = src/private/base.h; sourceTree = "<group>"; };
-		7A452DB72AE4017200700DCB /* graphics.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = graphics.cpp; path = src/private/graphics.cpp; sourceTree = "<group>"; };
-		7A452DBD2AE4018C00700DCB /* graphics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = graphics.h; path = src/public/kisGraphics/graphics.h; sourceTree = "<group>"; };
 		7A452DC22AE42AA600700DCB /* libkisEngine.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libkisEngine.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		7A452DC92AE42AFE00700DCB /* engine.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = engine.cpp; path = src/private/engine.cpp; sourceTree = "<group>"; };
 		7A452DCC2AE42B1A00700DCB /* engine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = engine.h; path = src/public/kisEngine/engine.h; sourceTree = "<group>"; };
 		7A452DCD2AE42DA700700DCB /* module.modulemap */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = "sourcecode.module-map"; name = module.modulemap; path = src/public/module.modulemap; sourceTree = "<group>"; };
-		7A452DDB2AE485A100700DCB /* kisVulkan.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = kisVulkan.cpp; path = src/private/kisVulkan/kisVulkan.cpp; sourceTree = "<group>"; };
-		7A452DDC2AE485A200700DCB /* kisVulkan.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = kisVulkan.h; path = src/private/kisVulkan/kisVulkan.h; sourceTree = "<group>"; };
+		7A452DDF2AE542AC00700DCB /* kisGraphics.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = kisGraphics.cpp; path = src/private/kisGraphics.cpp; sourceTree = "<group>"; };
+		7A452DE02AE542AC00700DCB /* kisGraphicsPrivate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = kisGraphicsPrivate.h; path = src/private/kisGraphicsPrivate.h; sourceTree = "<group>"; };
+		7A452DE22AE542BF00700DCB /* kisGraphics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = kisGraphics.h; path = src/public/kisGraphics/kisGraphics.h; sourceTree = "<group>"; };
+		7A452DE72AE5437C00700DCB /* kisVk.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = kisVk.h; path = src/private/kisVk/kisVk.h; sourceTree = "<group>"; };
+		7A452DE82AE5437C00700DCB /* kisVk.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = kisVk.cpp; path = src/private/kisVk/kisVk.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -233,12 +230,10 @@
 		7A452D952AE4002E00700DCB /* kisCore */ = {
 			isa = PBXGroup;
 			children = (
-				7A452D9F2AE4008C00700DCB /* ansi_string_static.h */,
-				7A452DA02AE4008C00700DCB /* array_static.h */,
-				7A452DA12AE4008C00700DCB /* core.h */,
-				7A452DA22AE4008C00700DCB /* ring_buffer.h */,
-				7A452D9B2AE4007C00700DCB /* core.cpp */,
-				7A452D9C2AE4007C00700DCB /* ring_buffer.cpp */,
+				7A452D9F2AE4008C00700DCB /* kisStringANSIStatic.h */,
+				7A452DA02AE4008C00700DCB /* kisArrayStatic.h */,
+				7A452DA12AE4008C00700DCB /* kisCore.h */,
+				7A452D9B2AE4007C00700DCB /* kisCore.cpp */,
 			);
 			path = kisCore;
 			sourceTree = "<group>";
@@ -246,11 +241,10 @@
 		7A452DA82AE400FC00700DCB /* kisGraphics */ = {
 			isa = PBXGroup;
 			children = (
-				7A452DDB2AE485A100700DCB /* kisVulkan.cpp */,
-				7A452DDC2AE485A200700DCB /* kisVulkan.h */,
-				7A452DBD2AE4018C00700DCB /* graphics.h */,
-				7A452DB62AE4017200700DCB /* base.h */,
-				7A452DB72AE4017200700DCB /* graphics.cpp */,
+				7A452DE32AE5431C00700DCB /* kisVk */,
+				7A452DE22AE542BF00700DCB /* kisGraphics.h */,
+				7A452DDF2AE542AC00700DCB /* kisGraphics.cpp */,
+				7A452DE02AE542AC00700DCB /* kisGraphicsPrivate.h */,
 			);
 			path = kisGraphics;
 			sourceTree = "<group>";
@@ -270,6 +264,15 @@
 			children = (
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		7A452DE32AE5431C00700DCB /* kisVk */ = {
+			isa = PBXGroup;
+			children = (
+				7A452DE82AE5437C00700DCB /* kisVk.cpp */,
+				7A452DE72AE5437C00700DCB /* kisVk.h */,
+			);
+			name = kisVk;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -464,8 +467,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7A452D9D2AE4007C00700DCB /* core.cpp in Sources */,
-				7A452D9E2AE4007C00700DCB /* ring_buffer.cpp in Sources */,
+				7A452D9D2AE4007C00700DCB /* kisCore.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -473,8 +475,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7A452DDD2AE485A200700DCB /* kisVulkan.cpp in Sources */,
-				7A452DB82AE4017200700DCB /* graphics.cpp in Sources */,
+				7A452DE92AE5437C00700DCB /* kisVk.cpp in Sources */,
+				7A452DE12AE542AC00700DCB /* kisGraphics.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
