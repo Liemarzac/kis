@@ -58,7 +58,7 @@ struct kisVkMemBlock
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-kisVkInfo g_vulkanDriver;
+kisVkInfo g_kisVkInfo;
 VkAllocationCallbacks g_vulkanAllocCallbacks;
 kisArrayStatic<kisVkMemBlock, 2048> g_vulkanMemBlocks;
 
@@ -224,9 +224,9 @@ void kisVkInitInstanceLayers()
         kisLogTableEntry(properties.layerName);
         if(strcmp(properties.layerName, k_validationLayerName) == 0)
         {
-            if(g_vulkanDriver.m_bValidate)
+            if(g_kisVkInfo.m_bValidate)
             {
-                g_vulkanDriver.m_layerNames.add(k_validationLayerName);
+                g_kisVkInfo.m_layerNames.add(k_validationLayerName);
                 bValidationLayerActive = true;
             }
         }
@@ -235,7 +235,7 @@ void kisVkInitInstanceLayers()
 
     if(!bValidationLayerActive)
     {
-        g_vulkanDriver.m_bValidate = false;
+        g_kisVkInfo.m_bValidate = false;
     }
 }
 
@@ -259,28 +259,28 @@ void kisVkInitInstanceExtensions(bool& bPortabilityEnumerationActive)
         kisLogTableEntry(properties.extensionName);
         if(strcmp(properties.extensionName, VK_KHR_SURFACE_EXTENSION_NAME) == 0)
         {
-            g_vulkanDriver.m_instanceExtensionNames.add(VK_KHR_SURFACE_EXTENSION_NAME);
+            g_kisVkInfo.m_instanceExtensionNames.add(VK_KHR_SURFACE_EXTENSION_NAME);
             bSurfaceExtensionFound = true;
         }
         else if(strcmp(properties.extensionName, VK_EXT_METAL_SURFACE_EXTENSION_NAME) == 0)
         {
-            g_vulkanDriver.m_instanceExtensionNames.add(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
+            g_kisVkInfo.m_instanceExtensionNames.add(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
             bMetalSurfaceExtensionFound = true;
         }
         else if(strcmp(properties.extensionName, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) == 0)
         {
-            g_vulkanDriver.m_instanceExtensionNames.add(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+            g_kisVkInfo.m_instanceExtensionNames.add(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         }
         else if(strcmp(properties.extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME) == 0)
         {
-            if(g_vulkanDriver.m_bValidate)
+            if(g_kisVkInfo.m_bValidate)
             {
-                g_vulkanDriver.m_instanceExtensionNames.add(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+                g_kisVkInfo.m_instanceExtensionNames.add(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
             }
         }
         else if(strcmp(properties.extensionName, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME) == 0)
         {
-            g_vulkanDriver.m_instanceExtensionNames.add(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+            g_kisVkInfo.m_instanceExtensionNames.add(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
             bPortabilityEnumerationActive = true;
         }
     }
@@ -315,14 +315,14 @@ void kisVkCreateInstance(bool bPortabilityEnumerationActive)
         .pNext = VK_NULL_HANDLE,
         .flags = instanceCreateFlags,
         .pApplicationInfo = &app,
-        .enabledLayerCount = g_vulkanDriver.m_layerNames.num(),
-        .ppEnabledLayerNames = g_vulkanDriver.m_layerNames.dataPointer(),
-        .enabledExtensionCount = g_vulkanDriver.m_instanceExtensionNames.num(),
-        .ppEnabledExtensionNames = g_vulkanDriver.m_instanceExtensionNames.dataPointer(),
+        .enabledLayerCount = g_kisVkInfo.m_layerNames.num(),
+        .ppEnabledLayerNames = g_kisVkInfo.m_layerNames.dataPointer(),
+        .enabledExtensionCount = g_kisVkInfo.m_instanceExtensionNames.num(),
+        .ppEnabledExtensionNames = g_kisVkInfo.m_instanceExtensionNames.dataPointer(),
     };
     
     VkDebugUtilsMessengerCreateInfoEXT dbgMessengerCreateInfo;
-    if(g_vulkanDriver.m_bValidate)
+    if(g_kisVkInfo.m_bValidate)
     {
         // VK_EXT_debug_utils style
         dbgMessengerCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -334,15 +334,15 @@ void kisVkCreateInstance(bool bPortabilityEnumerationActive)
                                                 VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
                                                 VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         dbgMessengerCreateInfo.pfnUserCallback = kisVkDebugMessengerCallback;
-        dbgMessengerCreateInfo.pUserData = &g_vulkanDriver;
+        dbgMessengerCreateInfo.pUserData = &g_kisVkInfo;
         instanceCreateInfo.pNext = &dbgMessengerCreateInfo;
     }
 
-    KIS_VK_CHECK(vkCreateInstance(&instanceCreateInfo, &g_vulkanAllocCallbacks, &g_vulkanDriver.m_instance));
+    KIS_VK_CHECK(vkCreateInstance(&instanceCreateInfo, &g_vulkanAllocCallbacks, &g_kisVkInfo.m_instance));
 
-    KIS_VK_GET_PROC_ADDR(g_vulkanDriver.m_instance, GetPhysicalDeviceSurfaceCapabilitiesKHR);
-    KIS_VK_GET_PROC_ADDR(g_vulkanDriver.m_instance, GetPhysicalDeviceSurfaceFormatsKHR);
-    KIS_VK_GET_PROC_ADDR(g_vulkanDriver.m_instance, CreateSwapchainKHR);
+    KIS_VK_GET_PROC_ADDR(g_kisVkInfo.m_instance, GetPhysicalDeviceSurfaceCapabilitiesKHR);
+    KIS_VK_GET_PROC_ADDR(g_kisVkInfo.m_instance, GetPhysicalDeviceSurfaceFormatsKHR);
+    KIS_VK_GET_PROC_ADDR(g_kisVkInfo.m_instance, CreateSwapchainKHR);
 }
 
 //--------------------------------------------------------------------------
@@ -355,21 +355,21 @@ void kisVkCreateSurface(const void* metalLayer)
     surfaceCreateInfo.pNext = VK_NULL_HANDLE;
     surfaceCreateInfo.flags = 0;
     surfaceCreateInfo.pLayer = metalLayer;
-    KIS_VK_CHECK(vkCreateMetalSurfaceEXT(g_vulkanDriver.m_instance, &surfaceCreateInfo, &g_vulkanAllocCallbacks, &g_vulkanDriver.m_surface));
+    KIS_VK_CHECK(vkCreateMetalSurfaceEXT(g_kisVkInfo.m_instance, &surfaceCreateInfo, &g_vulkanAllocCallbacks, &g_kisVkInfo.m_surface));
 }
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 void kisVkPickPhysicalDevice()
 {
-    g_vulkanDriver.m_physicalDevice = nullptr;
-    g_vulkanDriver.m_iGraphicsQueueFamily = k_kisCoreInvalidIndex;
-    g_vulkanDriver.m_iPresentQueueFamily = k_kisCoreInvalidIndex;
+    g_kisVkInfo.m_physicalDevice = nullptr;
+    g_kisVkInfo.m_iGraphicsQueueFamily = k_kisCoreInvalidIndex;
+    g_kisVkInfo.m_iPresentQueueFamily = k_kisCoreInvalidIndex;
     
     const uint32_t k_maxPhysicalDevices = 16;
     kisArrayStatic<VkPhysicalDevice, k_maxPhysicalDevices> physicalDevices(kisArrayStaticInit::Fill);
 
-    KIS_VK_CHECK(vkEnumeratePhysicalDevices(g_vulkanDriver.m_instance, physicalDevices.numPointer(), physicalDevices.dataPointer()));
+    KIS_VK_CHECK(vkEnumeratePhysicalDevices(g_kisVkInfo.m_instance, physicalDevices.numPointer(), physicalDevices.dataPointer()));
 
     const uint32_t k_maxQueueFamilityProperties = 32;
     kisArrayStatic<VkQueueFamilyProperties, k_maxQueueFamilityProperties> queueFamilyProperties(kisArrayStaticInit::Fill);
@@ -403,7 +403,7 @@ void kisVkPickPhysicalDevice()
             if(iPresentQueueFamily == k_kisCoreInvalidIndex)
             {
                 VkBool32 bSupportPresent = false;
-                vkGetPhysicalDeviceSurfaceSupportKHR(device, iQueueFamilyProperty, g_vulkanDriver.m_surface, &bSupportPresent);
+                vkGetPhysicalDeviceSurfaceSupportKHR(device, iQueueFamilyProperty, g_kisVkInfo.m_surface, &bSupportPresent);
                 if(bSupportPresent)
                 {
                     iPresentQueueFamily = iQueueFamilyProperty;
@@ -423,8 +423,8 @@ void kisVkPickPhysicalDevice()
             continue;
         }
 
-        g_vulkanDriver.m_iPresentQueueFamily = iPresentQueueFamily;
-        g_vulkanDriver.m_iGraphicsQueueFamily = iGraphicsQueueFamily;
+        g_kisVkInfo.m_iPresentQueueFamily = iPresentQueueFamily;
+        g_kisVkInfo.m_iGraphicsQueueFamily = iGraphicsQueueFamily;
 
         if(!bFoundDiscreteGPU || properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
         {
@@ -432,8 +432,8 @@ void kisVkPickPhysicalDevice()
             {
                 iBestDevice = iDevice;
                 bestImageDimension = properties.limits.maxImageDimension2D;
-                g_vulkanDriver.m_physicalDevice = device;
-                g_vulkanDriver.m_deviceProperties = properties;
+                g_kisVkInfo.m_physicalDevice = device;
+                g_kisVkInfo.m_deviceProperties = properties;
             }
 
             if(properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
@@ -443,13 +443,13 @@ void kisVkPickPhysicalDevice()
         }
     }
 
-    KIS_ASSERT(g_vulkanDriver.m_physicalDevice != nullptr);
-    KIS_ASSERT(g_vulkanDriver.m_iPresentQueueFamily != k_kisCoreInvalidIndex);
-    KIS_ASSERT(g_vulkanDriver.m_iPresentQueueFamily != k_kisCoreInvalidIndex);
+    KIS_ASSERT(g_kisVkInfo.m_physicalDevice != nullptr);
+    KIS_ASSERT(g_kisVkInfo.m_iPresentQueueFamily != k_kisCoreInvalidIndex);
+    KIS_ASSERT(g_kisVkInfo.m_iPresentQueueFamily != k_kisCoreInvalidIndex);
     
     const uint32_t k_maxDeviceExtensionProperties = 256;
     kisArrayStatic<VkExtensionProperties, k_maxDeviceExtensionProperties> deviceExtensionProperties(kisArrayStaticInit::Fill);
-    vkEnumerateDeviceExtensionProperties(g_vulkanDriver.m_physicalDevice, nullptr, deviceExtensionProperties.numPointer(), deviceExtensionProperties.dataPointer());
+    vkEnumerateDeviceExtensionProperties(g_kisVkInfo.m_physicalDevice, nullptr, deviceExtensionProperties.numPointer(), deviceExtensionProperties.dataPointer());
     bool bSwapchainFound = false;
     const char* k_portabilitySubsetExtensioName = "VK_KHR_portability_subset";
  
@@ -460,18 +460,18 @@ void kisVkPickPhysicalDevice()
         if (strcmp(VK_KHR_SWAPCHAIN_EXTENSION_NAME, properties.extensionName) == 0)
         {
             bSwapchainFound = true;
-            g_vulkanDriver.m_deviceExtensionNames.add(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+            g_kisVkInfo.m_deviceExtensionNames.add(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
         }
         else if(strcmp(k_portabilitySubsetExtensioName, properties.extensionName) == 0)
         {
-            g_vulkanDriver.m_deviceExtensionNames.add(k_portabilitySubsetExtensioName);
+            g_kisVkInfo.m_deviceExtensionNames.add(k_portabilitySubsetExtensioName);
         }
     }
     kisLogTableFooter();
 
     //demo->fpGetPhysicalDeviceSurfaceFormatsKHR(demo->gpu, demo->surface, &formatCount, surfFormats);
     kisArrayStatic<VkSurfaceFormatKHR, 64> surfaceFormats(kisArrayStaticInit::Fill);
-    g_vulkanFuncPtrGetPhysicalDeviceSurfaceFormatsKHR(g_vulkanDriver.m_physicalDevice, g_vulkanDriver.m_surface, surfaceFormats.numPointer(), surfaceFormats.dataPointer());
+    g_vulkanFuncPtrGetPhysicalDeviceSurfaceFormatsKHR(g_kisVkInfo.m_physicalDevice, g_kisVkInfo.m_surface, surfaceFormats.numPointer(), surfaceFormats.dataPointer());
 
     for(const VkSurfaceFormatKHR& surfaceFormat : surfaceFormats)
     {
@@ -482,7 +482,7 @@ void kisVkPickPhysicalDevice()
             format == VK_FORMAT_A1R5G5B5_UNORM_PACK16 || format == VK_FORMAT_R5G6B5_UNORM_PACK16 ||
             format == VK_FORMAT_R16G16B16A16_SFLOAT)
         {
-            g_vulkanDriver.m_surfaceFormat = surfaceFormat;
+            g_kisVkInfo.m_surfaceFormat = surfaceFormat;
             break;
         }
     }
@@ -496,7 +496,7 @@ void kisVkCreateDevice()
     VkDeviceQueueCreateInfo queues[2];
     queues[0].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     queues[0].pNext = nullptr;
-    queues[0].queueFamilyIndex = g_vulkanDriver.m_iGraphicsQueueFamily;
+    queues[0].queueFamilyIndex = g_kisVkInfo.m_iGraphicsQueueFamily;
     queues[0].queueCount = 1;
     queues[0].pQueuePriorities = queuePriorities;
     queues[0].flags = 0;
@@ -508,23 +508,23 @@ void kisVkCreateDevice()
         .pQueueCreateInfos = queues,
         .enabledLayerCount = 0,
         .ppEnabledLayerNames = nullptr,
-        .enabledExtensionCount = g_vulkanDriver.m_deviceExtensionNames.num(),
-        .ppEnabledExtensionNames = g_vulkanDriver.m_deviceExtensionNames.dataPointer(),
+        .enabledExtensionCount = g_kisVkInfo.m_deviceExtensionNames.num(),
+        .ppEnabledExtensionNames = g_kisVkInfo.m_deviceExtensionNames.dataPointer(),
         .pEnabledFeatures = nullptr,  // If specific features are required, pass them in here
     };
 
-    if(g_vulkanDriver.m_iGraphicsQueueFamily != g_vulkanDriver.m_iPresentQueueFamily)
+    if(g_kisVkInfo.m_iGraphicsQueueFamily != g_kisVkInfo.m_iPresentQueueFamily)
     {
         queues[1].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queues[1].pNext = nullptr;
-        queues[1].queueFamilyIndex = g_vulkanDriver.m_iPresentQueueFamily;
+        queues[1].queueFamilyIndex = g_kisVkInfo.m_iPresentQueueFamily;
         queues[1].queueCount = 1;
         queues[1].pQueuePriorities = queuePriorities;
         queues[1].flags = 0;
         deviceCreateInfos.queueCreateInfoCount = 2;
     }
 
-    KIS_VK_CHECK(vkCreateDevice(g_vulkanDriver.m_physicalDevice, &deviceCreateInfos, &g_vulkanAllocCallbacks, &g_vulkanDriver.m_device));
+    KIS_VK_CHECK(vkCreateDevice(g_kisVkInfo.m_physicalDevice, &deviceCreateInfos, &g_vulkanAllocCallbacks, &g_kisVkInfo.m_device));
 }
 
 //--------------------------------------------------------------------------
@@ -533,14 +533,14 @@ void kisVkPrepare()
 {
     // Surface capabilities.
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
-    KIS_VK_CHECK(g_vulkanFuncPtrGetPhysicalDeviceSurfaceCapabilitiesKHR(g_vulkanDriver.m_physicalDevice, g_vulkanDriver.m_surface, &surfaceCapabilities));
+    KIS_VK_CHECK(g_vulkanFuncPtrGetPhysicalDeviceSurfaceCapabilitiesKHR(g_kisVkInfo.m_physicalDevice, g_kisVkInfo.m_surface, &surfaceCapabilities));
 
-    g_vulkanDriver.m_swapchainSize = surfaceCapabilities.maxImageExtent;
+    g_kisVkInfo.m_swapchainSize = surfaceCapabilities.maxImageExtent;
 
 
     VkPresentModeKHR swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
 
-    uint32_t nSwapchainImages = g_vulkanDriver.m_swapchainImageViews.capacity();
+    uint32_t nSwapchainImages = g_kisVkInfo.m_swapchainImageViews.capacity();
     if(surfaceCapabilities.maxImageCount > 0 && nSwapchainImages > surfaceCapabilities.maxImageCount)
     {
         nSwapchainImages = surfaceCapabilities.maxImageCount;
@@ -578,16 +578,16 @@ void kisVkPrepare()
     }
 
     // Create swapchain.
-    VkSwapchainKHR oldSwapchain = g_vulkanDriver.m_swapchain;
+    VkSwapchainKHR oldSwapchain = g_kisVkInfo.m_swapchain;
 
     VkSwapchainCreateInfoKHR swapchainCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
         .pNext = nullptr,
-        .surface = g_vulkanDriver.m_surface,
+        .surface = g_kisVkInfo.m_surface,
         .minImageCount = nSwapchainImages,
-        .imageFormat = g_vulkanDriver.m_surfaceFormat.format,
-        .imageColorSpace = g_vulkanDriver.m_surfaceFormat.colorSpace,
-        .imageExtent = g_vulkanDriver.m_swapchainSize,
+        .imageFormat = g_kisVkInfo.m_surfaceFormat.format,
+        .imageColorSpace = g_kisVkInfo.m_surfaceFormat.colorSpace,
+        .imageExtent = g_kisVkInfo.m_swapchainSize,
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         .preTransform = preTransform,
         .compositeAlpha = compositeAlpha,
@@ -600,23 +600,23 @@ void kisVkPrepare()
         .clipped = true,
     };
 
-    KIS_VK_CHECK(vkCreateSwapchainKHR(g_vulkanDriver.m_device, &swapchainCreateInfo, &g_vulkanAllocCallbacks, &g_vulkanDriver.m_swapchain));
+    KIS_VK_CHECK(vkCreateSwapchainKHR(g_kisVkInfo.m_device, &swapchainCreateInfo, &g_vulkanAllocCallbacks, &g_kisVkInfo.m_swapchain));
 
     if(oldSwapchain != VK_NULL_HANDLE)
     {
-        vkDestroySwapchainKHR(g_vulkanDriver.m_device, oldSwapchain, &g_vulkanAllocCallbacks);
+        vkDestroySwapchainKHR(g_kisVkInfo.m_device, oldSwapchain, &g_vulkanAllocCallbacks);
     }
 
     // Get swapchain images.
-    g_vulkanDriver.m_swapchainImages.fill();
-    KIS_VK_CHECK(vkGetSwapchainImagesKHR(g_vulkanDriver.m_device, g_vulkanDriver.m_swapchain, g_vulkanDriver.m_swapchainImages.numPointer(), g_vulkanDriver.m_swapchainImages.dataPointer()));
+    g_kisVkInfo.m_swapchainImages.fill();
+    KIS_VK_CHECK(vkGetSwapchainImagesKHR(g_kisVkInfo.m_device, g_kisVkInfo.m_swapchain, g_kisVkInfo.m_swapchainImages.numPointer(), g_kisVkInfo.m_swapchainImages.dataPointer()));
 
     // Destroy old image views.
-    for(int i = 0 ; i < g_vulkanDriver.m_swapchainImageViews.num(); ++i)
+    for(int i = 0 ; i < g_kisVkInfo.m_swapchainImageViews.num(); ++i)
     {
-        vkDestroyImageView(g_vulkanDriver.m_device, g_vulkanDriver.m_swapchainImageViews[i], &g_vulkanAllocCallbacks);
+        vkDestroyImageView(g_kisVkInfo.m_device, g_kisVkInfo.m_swapchainImageViews[i], &g_vulkanAllocCallbacks);
     }
-    g_vulkanDriver.m_swapchainImageViews.empty();
+    g_kisVkInfo.m_swapchainImageViews.empty();
 
     // Create image views.
     for(int i = 0 ; i < nSwapchainImages; ++i)
@@ -624,7 +624,7 @@ void kisVkPrepare()
         VkImageViewCreateInfo imageViewCreateInfo = {
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
             .pNext = nullptr,
-            .format = g_vulkanDriver.m_surfaceFormat.format,
+            .format = g_kisVkInfo.m_surfaceFormat.format,
             .components =
                 {
                     .r = VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -636,24 +636,24 @@ void kisVkPrepare()
                 {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1},
             .viewType = VK_IMAGE_VIEW_TYPE_2D,
             .flags = 0,
-            .image = g_vulkanDriver.m_swapchainImages[i]
+            .image = g_kisVkInfo.m_swapchainImages[i]
         };
 
         VkImageView imageView = VK_NULL_HANDLE;
-        KIS_VK_CHECK(vkCreateImageView(g_vulkanDriver.m_device, &imageViewCreateInfo, &g_vulkanAllocCallbacks, &imageView));
-        g_vulkanDriver.m_swapchainImageViews.add(imageView);
+        KIS_VK_CHECK(vkCreateImageView(g_kisVkInfo.m_device, &imageViewCreateInfo, &g_vulkanAllocCallbacks, &imageView));
+        g_kisVkInfo.m_swapchainImageViews.add(imageView);
     }
 
     // Create command pool.
-    KIS_ASSERT(g_vulkanDriver.m_cmdPool == nullptr);
+    KIS_ASSERT(g_kisVkInfo.m_cmdPool == nullptr);
     VkCommandPoolCreateInfo cmdPoolCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .pNext = NULL,
-        .queueFamilyIndex = g_vulkanDriver.m_iGraphicsQueueFamily,
+        .queueFamilyIndex = g_kisVkInfo.m_iGraphicsQueueFamily,
         .flags = 0,
     };
 
-    KIS_VK_CHECK(vkCreateCommandPool(g_vulkanDriver.m_device, &cmdPoolCreateInfo, &g_vulkanAllocCallbacks, &g_vulkanDriver.m_cmdPool));
+    KIS_VK_CHECK(vkCreateCommandPool(g_kisVkInfo.m_device, &cmdPoolCreateInfo, &g_vulkanAllocCallbacks, &g_kisVkInfo.m_cmdPool));
 }
 
 //--------------------------------------------------------------------------
@@ -662,11 +662,11 @@ void kisVkInit(const void* metalLayer)
 {
     printf("Initializing Vulkan\n");
 
-    memset(&g_vulkanDriver, 0, sizeof(g_vulkanDriver));
-    g_vulkanDriver.m_bValidate = true;
+    memset(&g_kisVkInfo, 0, sizeof(g_kisVkInfo));
+    g_kisVkInfo.m_bValidate = true;
 
     memset(&g_vulkanAllocCallbacks, 0, sizeof(g_vulkanAllocCallbacks));
-    g_vulkanAllocCallbacks.pUserData = (void*)&g_vulkanDriver;
+    g_vulkanAllocCallbacks.pUserData = (void*)&g_kisVkInfo;
     g_vulkanAllocCallbacks.pfnAllocation = kisVkAlloc;
     g_vulkanAllocCallbacks.pfnReallocation = kisVkRealloc;
     g_vulkanAllocCallbacks.pfnFree = kisVkFree;
@@ -686,8 +686,8 @@ void kisVkInit(const void* metalLayer)
 //--------------------------------------------------------------------------
 void kisVkShutdown()
 {
-    if(g_vulkanDriver.m_instance != VK_NULL_HANDLE)
+    if(g_kisVkInfo.m_instance != VK_NULL_HANDLE)
     {
-        vkDestroyInstance(g_vulkanDriver.m_instance, nullptr);
+        vkDestroyInstance(g_kisVkInfo.m_instance, nullptr);
     }
 }
