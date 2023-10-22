@@ -2,25 +2,25 @@
 
 #include "core.h"
 
-enum class ArrayStatic_Init
+enum class kisArrayStaticInit
 {
     Empty,
     Fill
 };
 
 template<typename T, size_t MaxCount>
-class ArrayStaticIterator;
+class kisArrayStaticIterator;
 
 template<typename T, size_t MaxCount>
-class ArrayStaticConstIterator;
+class kisArrayStaticConstIterator;
 
 template<typename T, size_t MaxCount>
-class ArrayStatic
+class kisArrayStatic
 {
 public:
-    ArrayStatic(ArrayStatic_Init init = ArrayStatic_Init::Empty)
+    kisArrayStatic(kisArrayStaticInit init = kisArrayStaticInit::Empty)
     {
-        m_nElements = init == ArrayStatic_Init::Empty ? 0 : MaxCount;
+        m_nElements = init == kisArrayStaticInit::Empty ? 0 : MaxCount;
     }
 
     void add(const T& elem)
@@ -86,30 +86,30 @@ public:
         return m_elements[index];
     }
 
-    ArrayStaticIterator<T, MaxCount> begin()
+    kisArrayStaticIterator<T, MaxCount> begin()
     {
-        ArrayStaticIterator<T, MaxCount> beginItr(*this);
+        kisArrayStaticIterator<T, MaxCount> beginItr(*this);
         beginItr.m_pos = 0;
         return beginItr;
     }
 
-    ArrayStaticIterator<T, MaxCount> end()
+    kisArrayStaticIterator<T, MaxCount> end()
     {
-        ArrayStaticIterator<T, MaxCount> endItr(*this);
+        kisArrayStaticIterator<T, MaxCount> endItr(*this);
         endItr.m_pos = num();
         return endItr;
     }
 
-    ArrayStaticConstIterator<T, MaxCount> begin() const
+    kisArrayStaticConstIterator<T, MaxCount> begin() const
     {
-        ArrayStaticConstIterator<T, MaxCount> beginItr(*this);
+        kisArrayStaticConstIterator<T, MaxCount> beginItr(*this);
         beginItr.m_pos = 0;
         return beginItr;
     }
 
-    ArrayStaticConstIterator<T, MaxCount> end() const
+    kisArrayStaticConstIterator<T, MaxCount> end() const
     {
-        ArrayStaticConstIterator<T, MaxCount> endItr(*this);
+        kisArrayStaticConstIterator<T, MaxCount> endItr(*this);
         endItr.m_pos = num();
         return endItr;
     }
@@ -120,17 +120,17 @@ private:
 };
 
 template<typename T, size_t MaxCount>
-class ArrayStaticIterator
+class kisArrayStaticIterator
 {
-    friend class ArrayStatic<T, MaxCount>;
+    friend class kisArrayStatic<T, MaxCount>;
 
 public:
-    ArrayStaticIterator(ArrayStatic<T, MaxCount>& array) :
+    kisArrayStaticIterator(kisArrayStatic<T, MaxCount>& array) :
         m_array(array)
     {
     }
 
-    bool operator!=(const ArrayStaticIterator& other)
+    bool operator!=(const kisArrayStaticIterator& other)
     {
         return &m_array != &other.m_array || m_pos != other.m_pos;
     }
@@ -140,29 +140,29 @@ public:
         return m_array[m_pos];
     }
 
-    const ArrayStaticIterator& operator++()
+    const kisArrayStaticIterator& operator++()
     {
         m_pos++;
         return *this;
     }
 
 private:
-    ArrayStatic<T, MaxCount>& m_array;
+    kisArrayStatic<T, MaxCount>& m_array;
     uint32_t m_pos = 0;
 };
 
 template<typename T, size_t MaxCount>
-class ArrayStaticConstIterator
+class kisArrayStaticConstIterator
 {
-    friend class ArrayStatic<T, MaxCount>;
+    friend class kisArrayStatic<T, MaxCount>;
     
 public:
-    ArrayStaticConstIterator(const ArrayStatic<T, MaxCount>& array) :
+    kisArrayStaticConstIterator(const kisArrayStatic<T, MaxCount>& array) :
         m_array(array)
     {
     }
 
-    bool operator!=(const ArrayStaticConstIterator& other)
+    bool operator!=(const kisArrayStaticConstIterator& other)
     {
         return &m_array != &other.m_array || m_pos != other.m_pos;
     }
@@ -172,13 +172,13 @@ public:
         return m_array[m_pos];
     }
 
-    const ArrayStaticConstIterator& operator++()
+    const kisArrayStaticConstIterator& operator++()
     {
         m_pos++;
         return *this;
     }
 
 private:
-    const ArrayStatic<T, MaxCount>& m_array;
+    const kisArrayStatic<T, MaxCount>& m_array;
     uint32_t m_pos = 0;
 };

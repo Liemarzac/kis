@@ -7,15 +7,15 @@
 #include <stdarg.h>
 
 template<size_t Size>
-class ANSIStringStatic
+class kisStringANSIStatic
 {
 public:
-    ANSIStringStatic()
+    kisStringANSIStatic()
     {
         m_buffer[0] = '\0';
     }
 
-    ANSIStringStatic(const char* str)
+    kisStringANSIStatic(const char* str)
     {
         m_buffer[0] = '\0';
         concat(str);
