@@ -33,11 +33,18 @@ struct kisVkInfo
     VkPhysicalDevice m_physicalDevice;
     VkDevice m_device;
     VkPhysicalDeviceProperties m_deviceProperties;
+    VkPhysicalDeviceMemoryProperties m_memoryProperties;
     VkSurfaceKHR m_surface;
     VkCommandPool m_cmdPool;
     VkSwapchainKHR m_swapchain;
     VkSurfaceFormatKHR m_surfaceFormat;
     VkExtent2D m_swapchainSize;
+    VkCommandBuffer m_cmdBuffer;
+    VkFormat m_depthFormat;
+    VkImage m_depthImage;
+    VkDeviceMemory m_depthMem;
+    VkImageView m_depthImageView;
+    VkMemoryAllocateInfo m_depthMemAllocInfo;
     uint32_t m_iGraphicsQueueFamily;
     uint32_t m_iPresentQueueFamily;
     bool m_bValidate;
@@ -59,7 +66,7 @@ struct kisVkMemBlock
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 kisVkInfo g_kisVkInfo;
-VkAllocationCallbacks g_vulkanAllocCallbacks;
+VkAllocationCallbacks g_kisVkAllocCallbacks;
 kisArrayStatic<kisVkMemBlock, 2048> g_vulkanMemBlocks;
 
 //--------------------------------------------------------------------------
@@ -207,6 +214,56 @@ VkBool32 kisVkDebugMessengerCallback(
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
+void kisVkNameObject(VkObjectType objectType, uint64_t vkHandle, const char* format, ...)
+{
+//    if(!g_kisVkInfo.m_bValidate)
+//    {
+//        return;
+//    }
+    char name[1024];
+    va_list argptr;
+    va_start(argptr, format);
+    vsnprintf(name, sizeof(name), format, argptr);
+    va_end(argptr);
+    name[sizeof(name) - 1] = '\0';
+
+    VkDebugUtilsObjectNameInfoEXT objNameInfo = {
+        .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+        .pNext = nullptr,
+        .objectType = objectType,
+        .objectHandle = vkHandle,
+        .pObjectName = name,
+    };
+
+    KIS_VK_CHECK(vkSetDebugUtilsObjectNameEXT(g_kisVkInfo.m_device, &objNameInfo));
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+bool kisVKMemoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, uint32_t& typeIndex)
+{
+    // Search memtypes to find first index with those properties
+    for (uint32_t i = 0; i < VK_MAX_MEMORY_TYPES; i++)
+    {
+        if ((typeBits & 1) != 0)
+        {
+            // Type is available, does it match user properties?
+            if ((g_kisVkInfo.m_memoryProperties.memoryTypes[i].propertyFlags & requirementsMask) != 0)
+            {
+                typeIndex = i;
+                return true;
+            }
+        }
+
+        typeBits >>= 1;
+    }
+
+    // No memory types matched, return failure
+    return false;
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 void kisVkInitInstanceLayers()
 {
     const uint32_t k_maxEntries = 100;
@@ -338,7 +395,7 @@ void kisVkCreateInstance(bool bPortabilityEnumerationActive)
         instanceCreateInfo.pNext = &dbgMessengerCreateInfo;
     }
 
-    KIS_VK_CHECK(vkCreateInstance(&instanceCreateInfo, &g_vulkanAllocCallbacks, &g_kisVkInfo.m_instance));
+    KIS_VK_CHECK(vkCreateInstance(&instanceCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_instance));
 
     KIS_VK_GET_PROC_ADDR(g_kisVkInfo.m_instance, GetPhysicalDeviceSurfaceCapabilitiesKHR);
     KIS_VK_GET_PROC_ADDR(g_kisVkInfo.m_instance, GetPhysicalDeviceSurfaceFormatsKHR);
@@ -355,7 +412,7 @@ void kisVkCreateSurface(const void* metalLayer)
     surfaceCreateInfo.pNext = VK_NULL_HANDLE;
     surfaceCreateInfo.flags = 0;
     surfaceCreateInfo.pLayer = metalLayer;
-    KIS_VK_CHECK(vkCreateMetalSurfaceEXT(g_kisVkInfo.m_instance, &surfaceCreateInfo, &g_vulkanAllocCallbacks, &g_kisVkInfo.m_surface));
+    KIS_VK_CHECK(vkCreateMetalSurfaceEXT(g_kisVkInfo.m_instance, &surfaceCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_surface));
 }
 
 //--------------------------------------------------------------------------
@@ -469,7 +526,6 @@ void kisVkPickPhysicalDevice()
     }
     kisLogTableFooter();
 
-    //demo->fpGetPhysicalDeviceSurfaceFormatsKHR(demo->gpu, demo->surface, &formatCount, surfFormats);
     kisArrayStatic<VkSurfaceFormatKHR, 64> surfaceFormats(kisArrayStaticInit::Fill);
     g_vulkanFuncPtrGetPhysicalDeviceSurfaceFormatsKHR(g_kisVkInfo.m_physicalDevice, g_kisVkInfo.m_surface, surfaceFormats.numPointer(), surfaceFormats.dataPointer());
 
@@ -486,6 +542,8 @@ void kisVkPickPhysicalDevice()
             break;
         }
     }
+
+    vkGetPhysicalDeviceMemoryProperties(g_kisVkInfo.m_physicalDevice, &g_kisVkInfo.m_memoryProperties);
 }
 
 //--------------------------------------------------------------------------
@@ -524,19 +582,18 @@ void kisVkCreateDevice()
         deviceCreateInfos.queueCreateInfoCount = 2;
     }
 
-    KIS_VK_CHECK(vkCreateDevice(g_kisVkInfo.m_physicalDevice, &deviceCreateInfos, &g_vulkanAllocCallbacks, &g_kisVkInfo.m_device));
+    KIS_VK_CHECK(vkCreateDevice(g_kisVkInfo.m_physicalDevice, &deviceCreateInfos, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_device));
 }
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void kisVkPrepare()
+void kisVkPrepareSwapchain()
 {
     // Surface capabilities.
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
     KIS_VK_CHECK(g_vulkanFuncPtrGetPhysicalDeviceSurfaceCapabilitiesKHR(g_kisVkInfo.m_physicalDevice, g_kisVkInfo.m_surface, &surfaceCapabilities));
 
     g_kisVkInfo.m_swapchainSize = surfaceCapabilities.maxImageExtent;
-
 
     VkPresentModeKHR swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
 
@@ -600,11 +657,11 @@ void kisVkPrepare()
         .clipped = true,
     };
 
-    KIS_VK_CHECK(vkCreateSwapchainKHR(g_kisVkInfo.m_device, &swapchainCreateInfo, &g_vulkanAllocCallbacks, &g_kisVkInfo.m_swapchain));
+    KIS_VK_CHECK(vkCreateSwapchainKHR(g_kisVkInfo.m_device, &swapchainCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_swapchain));
 
     if(oldSwapchain != VK_NULL_HANDLE)
     {
-        vkDestroySwapchainKHR(g_kisVkInfo.m_device, oldSwapchain, &g_vulkanAllocCallbacks);
+        vkDestroySwapchainKHR(g_kisVkInfo.m_device, oldSwapchain, &g_kisVkAllocCallbacks);
     }
 
     // Get swapchain images.
@@ -614,7 +671,7 @@ void kisVkPrepare()
     // Destroy old image views.
     for(int i = 0 ; i < g_kisVkInfo.m_swapchainImageViews.num(); ++i)
     {
-        vkDestroyImageView(g_kisVkInfo.m_device, g_kisVkInfo.m_swapchainImageViews[i], &g_vulkanAllocCallbacks);
+        vkDestroyImageView(g_kisVkInfo.m_device, g_kisVkInfo.m_swapchainImageViews[i], &g_kisVkAllocCallbacks);
     }
     g_kisVkInfo.m_swapchainImageViews.empty();
 
@@ -640,20 +697,107 @@ void kisVkPrepare()
         };
 
         VkImageView imageView = VK_NULL_HANDLE;
-        KIS_VK_CHECK(vkCreateImageView(g_kisVkInfo.m_device, &imageViewCreateInfo, &g_vulkanAllocCallbacks, &imageView));
+        KIS_VK_CHECK(vkCreateImageView(g_kisVkInfo.m_device, &imageViewCreateInfo, &g_kisVkAllocCallbacks, &imageView));
         g_kisVkInfo.m_swapchainImageViews.add(imageView);
     }
 
-    // Create command pool.
-    KIS_ASSERT(g_kisVkInfo.m_cmdPool == nullptr);
-    VkCommandPoolCreateInfo cmdPoolCreateInfo = {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisVkPrepareDepth()
+{
+    const VkFormat depthFormat = VK_FORMAT_D16_UNORM;
+    const VkImageCreateInfo imageCreateInfo = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
         .pNext = NULL,
-        .queueFamilyIndex = g_kisVkInfo.m_iGraphicsQueueFamily,
+        .imageType = VK_IMAGE_TYPE_2D,
+        .format = depthFormat,
+        .extent = {g_kisVkInfo.m_swapchainSize.width, g_kisVkInfo.m_swapchainSize.height, 1},
+        .mipLevels = 1,
+        .arrayLayers = 1,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .tiling = VK_IMAGE_TILING_OPTIMAL,
+        .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         .flags = 0,
     };
 
-    KIS_VK_CHECK(vkCreateCommandPool(g_kisVkInfo.m_device, &cmdPoolCreateInfo, &g_vulkanAllocCallbacks, &g_kisVkInfo.m_cmdPool));
+    VkMemoryRequirements memReqs;
+
+    g_kisVkInfo.m_depthFormat = depthFormat;
+
+    KIS_VK_CHECK(vkCreateImage(g_kisVkInfo.m_device, &imageCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_depthImage));
+    kisVkNameObject(VK_OBJECT_TYPE_IMAGE, (uint64_t)g_kisVkInfo.m_depthImage, "depth_image");
+
+    vkGetImageMemoryRequirements(g_kisVkInfo.m_device, g_kisVkInfo.m_depthImage, &memReqs);
+
+    g_kisVkInfo.m_depthMemAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    g_kisVkInfo.m_depthMemAllocInfo.pNext = nullptr;
+    g_kisVkInfo.m_depthMemAllocInfo.allocationSize = memReqs.size;
+    g_kisVkInfo.m_depthMemAllocInfo.memoryTypeIndex = 0;
+
+    KIS_CHECK(kisVKMemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, g_kisVkInfo.m_depthMemAllocInfo.memoryTypeIndex));
+
+    KIS_VK_CHECK(vkAllocateMemory(g_kisVkInfo.m_device, &g_kisVkInfo.m_depthMemAllocInfo, nullptr, &g_kisVkInfo.m_depthMem));
+    kisVkNameObject(VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t) g_kisVkInfo.m_depthMem, "depth_mem");
+
+    KIS_VK_CHECK(vkBindImageMemory(g_kisVkInfo.m_device, g_kisVkInfo.m_depthImage, g_kisVkInfo.m_depthMem, 0));
+
+    /* create image view */
+    VkImageViewCreateInfo imageViewCreateInfo = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .pNext = nullptr,
+        .image = g_kisVkInfo.m_depthImage,
+        .format = g_kisVkInfo.m_depthFormat,
+        .subresourceRange =
+            {.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1},
+        .flags = 0,
+        .viewType = VK_IMAGE_VIEW_TYPE_2D,
+    };
+    
+    KIS_VK_CHECK(vkCreateImageView(g_kisVkInfo.m_device, &imageViewCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_depthImageView));
+    kisVkNameObject(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)g_kisVkInfo.m_depthImageView, "depth_view");
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisVkPrepare()
+{
+    kisVkPrepareSwapchain();
+    kisVkPrepareDepth();
+
+    // Create command pool.
+    if(g_kisVkInfo.m_cmdPool == VK_NULL_HANDLE)
+    {
+        KIS_ASSERT(g_kisVkInfo.m_cmdPool == nullptr);
+        VkCommandPoolCreateInfo cmdPoolCreateInfo = {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+            .pNext = NULL,
+            .queueFamilyIndex = g_kisVkInfo.m_iGraphicsQueueFamily,
+            .flags = 0,
+        };
+
+        KIS_VK_CHECK(vkCreateCommandPool(g_kisVkInfo.m_device, &cmdPoolCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_cmdPool));
+    }
+
+    const VkCommandBufferAllocateInfo cmdBufferAllocInfo = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        .pNext = NULL,
+        .commandPool = g_kisVkInfo.m_cmdPool,
+        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        .commandBufferCount = 1,
+    };
+
+    KIS_VK_CHECK(vkAllocateCommandBuffers(g_kisVkInfo.m_device, &cmdBufferAllocInfo, &g_kisVkInfo.m_cmdBuffer));
+
+    VkCommandBufferBeginInfo cmdBufferBeginInfo = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        .pNext = NULL,
+        .flags = 0,
+        .pInheritanceInfo = NULL,
+    };
+
+    KIS_VK_CHECK(vkBeginCommandBuffer(g_kisVkInfo.m_cmdBuffer, &cmdBufferBeginInfo));
 }
 
 //--------------------------------------------------------------------------
@@ -665,11 +809,11 @@ void kisVkInit(const void* metalLayer)
     memset(&g_kisVkInfo, 0, sizeof(g_kisVkInfo));
     g_kisVkInfo.m_bValidate = true;
 
-    memset(&g_vulkanAllocCallbacks, 0, sizeof(g_vulkanAllocCallbacks));
-    g_vulkanAllocCallbacks.pUserData = (void*)&g_kisVkInfo;
-    g_vulkanAllocCallbacks.pfnAllocation = kisVkAlloc;
-    g_vulkanAllocCallbacks.pfnReallocation = kisVkRealloc;
-    g_vulkanAllocCallbacks.pfnFree = kisVkFree;
+    memset(&g_kisVkAllocCallbacks, 0, sizeof(g_kisVkAllocCallbacks));
+    g_kisVkAllocCallbacks.pUserData = (void*)&g_kisVkInfo;
+    g_kisVkAllocCallbacks.pfnAllocation = kisVkAlloc;
+    g_kisVkAllocCallbacks.pfnReallocation = kisVkRealloc;
+    g_kisVkAllocCallbacks.pfnFree = kisVkFree;
 
     kisVkInitInstanceLayers();
 
