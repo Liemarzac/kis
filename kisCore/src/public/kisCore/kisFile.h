@@ -20,8 +20,8 @@ void kisFileOutputFilesystem();
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-kisFileBuffer kisFileRead(const char* path);
+kisFileBuffer kisFileBufferCreate(const char* path);
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void kisFileBufferFree(kisFileBuffer& fileBuffer);
+void kisFileBufferDestroy(kisFileBuffer& fileBuffer);

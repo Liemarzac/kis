@@ -33,7 +33,7 @@ void kisFileOutputFilesystem()
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-kisFileBuffer kisFileRead(const char* path)
+kisFileBuffer kisFileBufferCreate(const char* path)
 {
     kisStringANSIStatic<k_kisCoreMaxPathSize> fullyQualifiedPath;
     fullyQualifiedPath.concat("%s/%s", g_kisFileDataPath, path);
@@ -62,7 +62,7 @@ kisFileBuffer kisFileRead(const char* path)
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void kisFileBufferFree(kisFileBuffer& fileBuffer)
+void kisFileBufferDestroy(kisFileBuffer& fileBuffer)
 {
     if(fileBuffer.m_data)
     {
