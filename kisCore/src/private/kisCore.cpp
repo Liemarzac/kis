@@ -1,8 +1,37 @@
 #include "kisCore.h"
+#include "kisFile.h"
 
 #include <cstdio>
 #include <cstring>
 #include <stdarg.h>
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+extern char g_kisFileDataPath[k_kisCoreMaxPathSize];
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisCoreInit(const kisCoreInitParams& params)
+{
+    kisCoreStringCopy(g_kisFileDataPath, sizeof(g_kisFileDataPath), params.m_dataPath);
+
+    kisFileOutputFilesystem();
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisCoreStringCopy(char* dst, size_t dstSize, const char* src)
+{
+    KIS_ASSERT(dst != nullptr);
+    KIS_ASSERT(dstSize > 0);
+    KIS_ASSERT(src != nullptr);
+
+    const size_t srcSize = strlen(src) + 1;
+    const size_t copySize = kisCoreMin(srcSize, dstSize);
+    memcpy(dst, src, copySize);
+    dst[dstSize - 1] = '\0';
+}
+
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------

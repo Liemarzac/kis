@@ -29,7 +29,7 @@ public:
         m_elements[m_nElements] = elem;
         m_nElements++;
     }
-    
+
     void removeUnordered(uint32_t index)
     {
         KIS_ASSERT(index < m_nElements);
@@ -60,7 +60,7 @@ public:
     {
         return m_elements;
     }
-    
+
     uint32_t* numPointer()
     {
         return &m_nElements;

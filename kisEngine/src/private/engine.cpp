@@ -1,13 +1,19 @@
 #include "engine.h"
 
+#include <kisCore/kisCore.h>
+
 #include <kisGraphics/kisGraphics.h>
 
-void kisEngine_Init(const void* metalLayer)
+void kisEngineInit(const kisEngineInitParams* params)
 {
-    kisGraphicsInit(metalLayer);
+    kisCoreInitParams coreInitParams;
+    coreInitParams.m_dataPath = params->m_dataPath;
+    kisCoreInit(coreInitParams);
+
+    kisGraphicsInit(params->m_metalLayer);
 }
 
-void kisEngine_Shutdown()
+void kisEngineShutdown()
 {
     kisGaphicsShutdown();
 }

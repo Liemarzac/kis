@@ -4,9 +4,15 @@
 extern "C" {
 #endif
 
-void kisEngine_Init(const void* m_metalLayer);
+typedef struct kisEngineInitParams
+{
+    const void* m_metalLayer;
+    char m_dataPath[256];
+} kisEngineInitParams;
 
-void kisEngine_Shutdown();
+void kisEngineInit(const kisEngineInitParams* params);
+
+void kisEngineShutdown();
 
 
 #if __cplusplus

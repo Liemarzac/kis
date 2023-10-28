@@ -4,6 +4,7 @@
 
 #include <kisCore/kisStringANSIStatic.h>
 #include <kisCore/kisArrayStatic.h>
+#include <kisCore/kisFile.h>
 
 #include <stdlib.h>
 
@@ -155,49 +156,40 @@ VkBool32 kisVkDebugMessengerCallback(
 {
     kisStringANSIStatic<1024> message;
 
-    if (s_bBreakOnValidationCallback)
-    {
-#ifndef WIN32
-        raise(SIGTRAP);
-#else
-        DebugBreak();
-#endif
-    }
-
-    if ((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) != 0)
+    if((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) != 0)
     {
         message.concat("VERBOSE : ");
     }
 
-    if ((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) != 0)
+    if((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) != 0)
     {
         message.concat("INFO : ");
     }
 
-    if ((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) != 0)
+    if((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) != 0)
     {
         message.concat("WARNING : ");
     }
 
-    if ((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0)
+    if((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0)
     {
         message.concat("ERROR : ");
     }
 
-    if ((messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT) != 0)
+    if((messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT) != 0)
     {
         message.concat("GENERAL");
     }
     else
     {
-        if ((messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) != 0)
+        if((messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) != 0)
         {
             message.concat("VALIDATION");
         }
 
-        if ((messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) != 0)
+        if((messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) != 0)
         {
-            if ((messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) != 0)
+            if((messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) != 0)
             {
                 message.concat("|");
             }
@@ -207,7 +199,16 @@ VkBool32 kisVkDebugMessengerCallback(
 
     message.concat(" - Message Id Number: %d | Message Id Name: %s\n\t%s\n", pCallbackData->messageIdNumber, pCallbackData->pMessageIdName == NULL ? "" : pCallbackData->pMessageIdName, pCallbackData->pMessage);
 
-    printf("%s\n", message.c_str());
+    kisLog("%s", message.c_str());
+
+    if(s_bBreakOnValidationCallback)
+    {
+#ifndef WIN32
+        raise(SIGTRAP);
+#else
+        DebugBreak();
+#endif
+    }
 
     return false;
 }
@@ -243,12 +244,12 @@ void kisVkNameObject(VkObjectType objectType, uint64_t vkHandle, const char* for
 bool kisVKMemoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, uint32_t& typeIndex)
 {
     // Search memtypes to find first index with those properties
-    for (uint32_t i = 0; i < VK_MAX_MEMORY_TYPES; i++)
+    for(uint32_t i = 0; i < VK_MAX_MEMORY_TYPES; i++)
     {
-        if ((typeBits & 1) != 0)
+        if((typeBits & 1) != 0)
         {
             // Type is available, does it match user properties?
-            if ((g_kisVkInfo.m_memoryProperties.memoryTypes[i].propertyFlags & requirementsMask) != 0)
+            if((g_kisVkInfo.m_memoryProperties.memoryTypes[i].propertyFlags & requirementsMask) != 0)
             {
                 typeIndex = i;
                 return true;
@@ -743,7 +744,6 @@ void kisVkPrepareDepth()
 
     KIS_VK_CHECK(vkBindImageMemory(g_kisVkInfo.m_device, g_kisVkInfo.m_depthImage, g_kisVkInfo.m_depthMem, 0));
 
-    /* create image view */
     VkImageViewCreateInfo imageViewCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
         .pNext = nullptr,
@@ -754,7 +754,7 @@ void kisVkPrepareDepth()
         .flags = 0,
         .viewType = VK_IMAGE_VIEW_TYPE_2D,
     };
-    
+
     KIS_VK_CHECK(vkCreateImageView(g_kisVkInfo.m_device, &imageViewCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_depthImageView));
     kisVkNameObject(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)g_kisVkInfo.m_depthImageView, "depth_view");
 }
@@ -797,6 +797,10 @@ void kisVkPrepare()
         .pInheritanceInfo = NULL,
     };
 
+    // load triangle
+    kisFileBuffer vsBuffer = kisFileRead("data/triangle/triangle_vert.spv");
+    kisFileBuffer psBuffer = kisFileRead("data/triangle/triangle_frag.spv");
+
     KIS_VK_CHECK(vkBeginCommandBuffer(g_kisVkInfo.m_cmdBuffer, &cmdBufferBeginInfo));
 }
 
@@ -804,7 +808,7 @@ void kisVkPrepare()
 //--------------------------------------------------------------------------
 void kisVkInit(const void* metalLayer)
 {
-    printf("Initializing Vulkan\n");
+    kisLog("Initializing Vulkan");
 
     memset(&g_kisVkInfo, 0, sizeof(g_kisVkInfo));
     g_kisVkInfo.m_bValidate = true;

@@ -31,19 +31,13 @@ class GameViewController: UIViewController {
 
         mtkView.device = defaultDevice
         mtkView.backgroundColor = UIColor.black
-//
-//        guard let newRenderer = Renderer(metalKitView: mtkView) else {
-//            print("Renderer cannot be initialized")
-//            return
-//        }
-//
-//        renderer = newRenderer
-//
-//        renderer.mtkView(mtkView, drawableSizeWillChange: mtkView.drawableSize)
 
-//        mtkView.delegate = renderer
+        let engineParams = UnsafeMutablePointer<kisEngineInitParams>.allocate(capacity: 1)
+        engineParams.pointee.m_metalLayer = UnsafeRawPointer(Unmanaged.passUnretained(mtkView.layer).toOpaque())
 
-        let p: UnsafeRawPointer = UnsafeRawPointer(Unmanaged.passUnretained(mtkView.layer).toOpaque())
-        kisEngine_Init(p)
+        copyStringToCCharArray(swiftString: Bundle.main.bundlePath, charArray: &engineParams.pointee.m_dataPath)
+
+        kisEngineInit(engineParams)
+        engineParams.deallocate()
     }
 }
