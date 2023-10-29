@@ -1,9 +1,10 @@
 #include "engine.h"
 
 #include <kisCore/kisCore.h>
-
 #include <kisGraphics/kisGraphics.h>
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 void kisEngineInit(const kisEngineInitParams* params)
 {
     kisCoreInitParams coreInitParams;
@@ -13,7 +14,24 @@ void kisEngineInit(const kisEngineInitParams* params)
     kisGraphicsInit(params->m_metalLayer);
 }
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 void kisEngineShutdown()
 {
     kisGaphicsShutdown();
 }
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisEngineRender()
+{
+    kisGraphicsRender();
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisEngineResize(unsigned int width, unsigned int height)
+{
+    kisGraphicsResize(width, height);
+}
+

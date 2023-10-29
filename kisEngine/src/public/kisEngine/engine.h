@@ -10,10 +10,15 @@ typedef struct kisEngineInitParams
     char m_dataPath[256];
 } kisEngineInitParams;
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 void kisEngineInit(const kisEngineInitParams* params);
-
 void kisEngineShutdown();
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisEngineRender();
+void kisEngineResize(unsigned int width, unsigned int height);
 
 #if __cplusplus
 }

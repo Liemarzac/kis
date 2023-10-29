@@ -7,12 +7,12 @@
 
 import UIKit
 import MetalKit
-import engine
+import KisEngine
 
 // Our iOS specific view controller
 class GameViewController: UIViewController {
 
-    var renderer: Renderer!
+    var renderer: KisRenderer!
     var mtkView: MTKView!
 
     override func viewDidLoad() {
@@ -29,8 +29,11 @@ class GameViewController: UIViewController {
             return
         }
 
+        renderer = KisRenderer()
+
         mtkView.device = defaultDevice
         mtkView.backgroundColor = UIColor.black
+        mtkView.delegate = renderer
 
         let engineParams = UnsafeMutablePointer<kisEngineInitParams>.allocate(capacity: 1)
         engineParams.pointee.m_metalLayer = UnsafeRawPointer(Unmanaged.passUnretained(mtkView.layer).toOpaque())

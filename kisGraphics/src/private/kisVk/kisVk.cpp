@@ -60,6 +60,15 @@ struct kisVkInfo
     kisArrayStatic<VkSemaphore, 3> m_imageAvailSemaphore;
 };
 
+struct kisVkRenderContext
+{
+    VkRenderPass m_renderPass;
+    VkPipeline m_pipeline;
+    VkSemaphore m_imageAvailableSemaphore;
+    VkSemaphore m_queueExecutedSemaphore;
+    VkFence m_queueExecutedFence;
+};
+
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 struct kisVkMemBlock
@@ -71,6 +80,7 @@ struct kisVkMemBlock
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 kisVkInfo g_kisVkInfo;
+kisVkRenderContext g_kisVkRenderContext;
 VkAllocationCallbacks g_kisVkAllocCallbacks;
 kisArrayStatic<kisVkMemBlock, 2048> g_vulkanMemBlocks;
 
@@ -811,7 +821,7 @@ void kisVkPrepare()
             .pName = "main",
         }
     };
-    
+
     kisArrayStatic<VkDynamicState, 2> dynamicStates;
     dynamicStates.add(VK_DYNAMIC_STATE_VIEWPORT);
     dynamicStates.add(VK_DYNAMIC_STATE_SCISSOR);
@@ -832,7 +842,7 @@ void kisVkPrepare()
         .pVertexAttributeDescriptions = nullptr,
     };
 
-    const VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCreateInfo = {
+    const VkPipelineInputAssemblyStateCreateInfo inputAssemblyCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
         .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
         .primitiveRestartEnable = VK_FALSE,
@@ -949,8 +959,7 @@ void kisVkPrepare()
         .pDependencies = &dependency,
     };
 
-    VkRenderPass renderPass;
-    KIS_VK_CHECK(vkCreateRenderPass(g_kisVkInfo.m_device, &renderPassCreateInfo, &g_kisVkAllocCallbacks, &renderPass));
+    KIS_VK_CHECK(vkCreateRenderPass(g_kisVkInfo.m_device, &renderPassCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_renderPass));
 
     VkGraphicsPipelineCreateInfo pipelineCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
@@ -958,6 +967,7 @@ void kisVkPrepare()
         .stageCount = 2,
         .pStages = shaderStages,
         .pVertexInputState = &vertexInfoStateCreateInfo,
+        .pInputAssemblyState = &inputAssemblyCreateInfo,
         .pViewportState = &viewportStateCreateInfo,
         .pRasterizationState = &rasterizationStateCreateInfo,
         .pMultisampleState = &multisamplingStateCreateInfo,
@@ -965,20 +975,19 @@ void kisVkPrepare()
         .pColorBlendState = &colorBlendStateCreateInfo,
         .pDynamicState = &dynamicStateCreateInfo,
         .layout = pipelineLayout,
-        .renderPass = renderPass,
+        .renderPass = g_kisVkRenderContext.m_renderPass,
         .subpass = 0,
         .basePipelineHandle = VK_NULL_HANDLE,
         .basePipelineIndex = -1,
     };
 
-    VkPipeline graphicsPipeline;
-    KIS_VK_CHECK(vkCreateGraphicsPipelines(g_kisVkInfo.m_device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, &g_kisVkAllocCallbacks, &graphicsPipeline));
+    KIS_VK_CHECK(vkCreateGraphicsPipelines(g_kisVkInfo.m_device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_pipeline));
 
     for(uint32_t iSwapchainImageView = 0; iSwapchainImageView < g_kisVkInfo.m_swapchainImageViews.num(); iSwapchainImageView++)
     {
         const VkFramebufferCreateInfo frameBufferCreateInfo = {
             .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-            .renderPass = renderPass,
+            .renderPass = g_kisVkRenderContext.m_renderPass,
             .attachmentCount = 1,
             .pAttachments = &g_kisVkInfo.m_swapchainImageViews[iSwapchainImageView],
             .width = g_kisVkInfo.m_swapchainSize.width,
@@ -996,7 +1005,7 @@ void kisVkPrepare()
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .pNext = nullptr,
         .queueFamilyIndex = g_kisVkInfo.m_iGraphicsQueueFamily,
-        .flags = 0,
+        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
     };
 
     KIS_VK_CHECK(vkCreateCommandPool(g_kisVkInfo.m_device, &cmdPoolCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_cmdPool));
@@ -1011,106 +1020,22 @@ void kisVkPrepare()
 
     KIS_VK_CHECK(vkAllocateCommandBuffers(g_kisVkInfo.m_device, &cmdBufferAllocInfo, &g_kisVkInfo.m_cmdBuffer));
 
-    const VkCommandBufferBeginInfo cmdBufferBeginInfo = {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .pInheritanceInfo = nullptr,
-    };
-
-    KIS_VK_CHECK(vkBeginCommandBuffer(g_kisVkInfo.m_cmdBuffer, &cmdBufferBeginInfo));
-
-    const VkClearValue clearColor = {
-        .color = {0.0f, 0.0f, 0.0f, 1.0f},
-    };
-
     const VkSemaphoreCreateInfo semaphoreCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
         .pNext = nullptr,
         .flags = 0
     };
 
-    VkSemaphore imageAvailableSemaphore;
-    vkCreateSemaphore(g_kisVkInfo.m_device, &semaphoreCreateInfo, &g_kisVkAllocCallbacks, &imageAvailableSemaphore);
+    vkCreateSemaphore(g_kisVkInfo.m_device, &semaphoreCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_imageAvailableSemaphore);
 
-    uint32_t iImage;
-    vkAcquireNextImageKHR(g_kisVkInfo.m_device, g_kisVkInfo.m_swapchain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &iImage);
-
-    const VkRenderPassBeginInfo renderPassBeginInfo = {
-        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-        .pNext = nullptr,
-        .renderPass = renderPass,
-        .framebuffer = g_kisVkInfo.m_frameBuffers[iImage],
-        .renderArea.offset = {0, 0},
-        .renderArea.extent = g_kisVkInfo.m_swapchainSize,
-        .clearValueCount = 1,
-        .pClearValues = &clearColor,
-    };
-
-    vkCmdBeginRenderPass(g_kisVkInfo.m_cmdBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-    vkCmdBindPipeline(g_kisVkInfo.m_cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-
-    const VkViewport viewport = {
-        .x = 0.0f,
-        .y = 0.0f,
-        .width = (float)g_kisVkInfo.m_swapchainSize.width,
-        .height = (float)g_kisVkInfo.m_swapchainSize.height,
-        .minDepth = 0.0f,
-        .maxDepth = 1.0f,
-    };
-    vkCmdSetViewport(g_kisVkInfo.m_cmdBuffer, 0, 1, &viewport);
-
-    const VkRect2D scissor = {
-        .offset = {0, 0},
-        .extent = g_kisVkInfo.m_swapchainSize,
-    };
-    vkCmdSetScissor(g_kisVkInfo.m_cmdBuffer, 0, 1, &scissor);
-
-    vkCmdDraw(g_kisVkInfo.m_cmdBuffer, 3, 1, 0, 0);
-
-    vkCmdEndRenderPass(g_kisVkInfo.m_cmdBuffer);
-
-    KIS_VK_CHECK(vkEndCommandBuffer(g_kisVkInfo.m_cmdBuffer));
-
-    const VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-
-    VkSemaphore queueExecutedSemaphore;
-    vkCreateSemaphore(g_kisVkInfo.m_device, &semaphoreCreateInfo, &g_kisVkAllocCallbacks, &queueExecutedSemaphore);
-
-
-    const VkSubmitInfo submitInfo = {
-        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-        .waitSemaphoreCount = 1,
-        .pWaitSemaphores = &imageAvailableSemaphore,
-        .pWaitDstStageMask = waitStages,
-        .commandBufferCount = 1,
-        .pCommandBuffers = &g_kisVkInfo.m_cmdBuffer,
-        .signalSemaphoreCount = 1,
-        .pSignalSemaphores = &queueExecutedSemaphore,
-    };
+    vkCreateSemaphore(g_kisVkInfo.m_device, &semaphoreCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_queueExecutedSemaphore);
 
     const VkFenceCreateInfo fenceCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
         .flags = VK_FENCE_CREATE_SIGNALED_BIT,
     };
 
-    VkFence queueExecuted;
-    vkCreateFence(g_kisVkInfo.m_device, &fenceCreateInfo, &g_kisVkAllocCallbacks, &queueExecuted);
-
-    vkQueueSubmit(g_kisVkInfo.m_graphicsQueue, 1, &submitInfo, queueExecuted);
-
-    const VkPresentInfoKHR presentInfo = {
-        .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-        .waitSemaphoreCount = 1,
-        .pWaitSemaphores = &queueExecutedSemaphore,
-        .swapchainCount = 1,
-        .pSwapchains = &g_kisVkInfo.m_swapchain,
-        .pImageIndices = &iImage,
-        .pResults = nullptr,
-    };
-
-    KIS_VK_CHECK(vkQueuePresentKHR(g_kisVkInfo.m_presentQueue, &presentInfo));
+    vkCreateFence(g_kisVkInfo.m_device, &fenceCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_queueExecutedFence);
 }
 
 //--------------------------------------------------------------------------
@@ -1147,4 +1072,94 @@ void kisVkShutdown()
     {
         vkDestroyInstance(g_kisVkInfo.m_instance, nullptr);
     }
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisVkRender()
+{
+    const VkCommandBufferBeginInfo cmdBufferBeginInfo = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .pInheritanceInfo = nullptr,
+    };
+
+    const VkClearValue clearColor = {
+        .color = {0.0f, 0.0f, 0.0f, 1.0f},
+    };
+
+    vkQueueWaitIdle(g_kisVkInfo.m_graphicsQueue);
+    vkQueueWaitIdle(g_kisVkInfo.m_presentQueue);
+
+    vkResetCommandBuffer(g_kisVkInfo.m_cmdBuffer, 0);
+
+    uint32_t iImage;
+    vkAcquireNextImageKHR(g_kisVkInfo.m_device, g_kisVkInfo.m_swapchain, UINT64_MAX, g_kisVkRenderContext.m_imageAvailableSemaphore, VK_NULL_HANDLE, &iImage);
+
+    KIS_VK_CHECK(vkBeginCommandBuffer(g_kisVkInfo.m_cmdBuffer, &cmdBufferBeginInfo));
+
+    const VkRenderPassBeginInfo renderPassBeginInfo = {
+        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+        .pNext = nullptr,
+        .renderPass = g_kisVkRenderContext.m_renderPass,
+        .framebuffer = g_kisVkInfo.m_frameBuffers[iImage],
+        .renderArea.offset = {0, 0},
+        .renderArea.extent = g_kisVkInfo.m_swapchainSize,
+        .clearValueCount = 1,
+        .pClearValues = &clearColor,
+    };
+
+    vkCmdBeginRenderPass(g_kisVkInfo.m_cmdBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    vkCmdBindPipeline(g_kisVkInfo.m_cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_kisVkRenderContext.m_pipeline);
+
+    const VkViewport viewport = {
+        .x = 0.0f,
+        .y = 0.0f,
+        .width = (float)g_kisVkInfo.m_swapchainSize.width,
+        .height = (float)g_kisVkInfo.m_swapchainSize.height,
+        .minDepth = 0.0f,
+        .maxDepth = 1.0f,
+    };
+    vkCmdSetViewport(g_kisVkInfo.m_cmdBuffer, 0, 1, &viewport);
+
+    const VkRect2D scissor = {
+        .offset = {0, 0},
+        .extent = g_kisVkInfo.m_swapchainSize,
+    };
+    vkCmdSetScissor(g_kisVkInfo.m_cmdBuffer, 0, 1, &scissor);
+
+    vkCmdDraw(g_kisVkInfo.m_cmdBuffer, 3, 1, 0, 0);
+
+    vkCmdEndRenderPass(g_kisVkInfo.m_cmdBuffer);
+
+    KIS_VK_CHECK(vkEndCommandBuffer(g_kisVkInfo.m_cmdBuffer));
+
+    const VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+
+    const VkSubmitInfo submitInfo = {
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores = &g_kisVkRenderContext.m_imageAvailableSemaphore,
+        .pWaitDstStageMask = waitStages,
+        .commandBufferCount = 1,
+        .pCommandBuffers = &g_kisVkInfo.m_cmdBuffer,
+        .signalSemaphoreCount = 1,
+        .pSignalSemaphores = &g_kisVkRenderContext.m_queueExecutedSemaphore,
+    };
+
+    vkQueueSubmit(g_kisVkInfo.m_graphicsQueue, 1, &submitInfo, g_kisVkRenderContext.m_queueExecutedFence);
+
+    const VkPresentInfoKHR presentInfo = {
+        .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores = &g_kisVkRenderContext.m_queueExecutedSemaphore,
+        .swapchainCount = 1,
+        .pSwapchains = &g_kisVkInfo.m_swapchain,
+        .pImageIndices = &iImage,
+        .pResults = nullptr,
+    };
+
+    KIS_VK_CHECK(vkQueuePresentKHR(g_kisVkInfo.m_presentQueue, &presentInfo));
 }

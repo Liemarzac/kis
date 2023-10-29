@@ -1,4 +1,4 @@
-module engine {
+module KisEngine {
     header "kisEngine/engine.h"
 
     export *

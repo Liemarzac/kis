@@ -6,3 +6,4 @@
 
 void kisVkInit(const void* metalLayer);
 void kisVkShutdown();
+void kisVkRender();

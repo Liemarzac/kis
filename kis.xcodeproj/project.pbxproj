@@ -37,6 +37,8 @@
 		7A452E002AED285900700DCB /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A452DFE2AED285900700DCB /* Utilities.swift */; };
 		7A452E0B2AED443300700DCB /* data in Resources */ = {isa = PBXBuildFile; fileRef = 7A452E0A2AED443300700DCB /* data */; };
 		7A452E0C2AED443300700DCB /* data in Resources */ = {isa = PBXBuildFile; fileRef = 7A452E0A2AED443300700DCB /* data */; };
+		7A452E0E2AEE578100700DCB /* kisRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A452E0D2AEE578100700DCB /* kisRenderer.swift */; };
+		7A452E0F2AEE578200700DCB /* kisRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A452E0D2AEE578100700DCB /* kisRenderer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -137,6 +139,7 @@
 		7A452DFC2AE8610E00700DCB /* kisFile-Swift.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "kisFile-Swift.swift"; sourceTree = "<group>"; };
 		7A452DFE2AED285900700DCB /* Utilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
 		7A452E0A2AED443300700DCB /* data */ = {isa = PBXFileReference; lastKnownFileType = folder; path = data; sourceTree = "<group>"; };
+		7A452E0D2AEE578100700DCB /* kisRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kisRenderer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -205,6 +208,7 @@
 				7A452D5F2AE4000000700DCB /* ShaderTypes.h */,
 				7A452D602AE4000200700DCB /* Assets.xcassets */,
 				7A452DFE2AED285900700DCB /* Utilities.swift */,
+				7A452E0D2AEE578100700DCB /* kisRenderer.swift */,
 			);
 			path = "kis Shared";
 			sourceTree = "<group>";
@@ -473,6 +477,7 @@
 				7A452D802AE4000200700DCB /* Shaders.metal in Sources */,
 				7A452D6B2AE4000200700DCB /* GameViewController.swift in Sources */,
 				7A452DFF2AED285900700DCB /* Utilities.swift in Sources */,
+				7A452E0E2AEE578100700DCB /* kisRenderer.swift in Sources */,
 				7A452D692AE4000200700DCB /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -485,6 +490,7 @@
 				7A452D812AE4000200700DCB /* Shaders.metal in Sources */,
 				7A452D7B2AE4000200700DCB /* GameViewController.swift in Sources */,
 				7A452E002AED285900700DCB /* Utilities.swift in Sources */,
+				7A452E0F2AEE578200700DCB /* kisRenderer.swift in Sources */,
 				7A452D792AE4000200700DCB /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
