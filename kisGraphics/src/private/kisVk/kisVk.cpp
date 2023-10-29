@@ -1161,5 +1161,6 @@ void kisVkRender()
         .pResults = nullptr,
     };
 
-    KIS_VK_CHECK(vkQueuePresentKHR(g_kisVkInfo.m_presentQueue, &presentInfo));
+    //KIS_VK_CHECK(vkQueuePresentKHR(g_kisVkInfo.m_presentQueue, &presentInfo));
+    vkQueuePresentKHR(g_kisVkInfo.m_presentQueue, &presentInfo);
 }

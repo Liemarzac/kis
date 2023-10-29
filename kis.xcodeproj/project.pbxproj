@@ -103,6 +103,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		7A0B75F02AEF0AFA00CD2584 /* kis-iOS_Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = "kis-iOS_Config.xcconfig"; path = "kis iOS/kis-iOS_Config.xcconfig"; sourceTree = "<group>"; };
 		7A452D5D2AE4000000700DCB /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 		7A452D5E2AE4000000700DCB /* Renderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Renderer.swift; sourceTree = "<group>"; };
 		7A452D5F2AE4000000700DCB /* ShaderTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShaderTypes.h; sourceTree = "<group>"; };
@@ -188,6 +189,7 @@
 		7A452D572AE4000000700DCB = {
 			isa = PBXGroup;
 			children = (
+				7A0B75F02AEF0AFA00CD2584 /* kis-iOS_Config.xcconfig */,
 				7A452E0A2AED443300700DCB /* data */,
 				7A452D5C2AE4000000700DCB /* kis Shared */,
 				7A452D672AE4000200700DCB /* kis iOS */,
@@ -687,6 +689,7 @@
 		};
 		7A452D8B2AE4000200700DCB /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7A0B75F02AEF0AFA00CD2584 /* kis-iOS_Config.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -708,8 +711,8 @@
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
-					"external/MoltenVK/MoltenVK.xcframework/ios-arm64_x86_64-simulator/libMoltenVK.a",
 					"-lc++",
+					"${inherited}",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.hi.kis.kis;
 				PRODUCT_NAME = kis;
@@ -723,6 +726,7 @@
 		};
 		7A452D8C2AE4000200700DCB /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7A0B75F02AEF0AFA00CD2584 /* kis-iOS_Config.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -744,8 +748,8 @@
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
-					"external/MoltenVK/MoltenVK.xcframework/ios-arm64_x86_64-simulator/libMoltenVK.a",
 					"-lc++",
+					"${inherited}",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.hi.kis.kis;
 				PRODUCT_NAME = kis;
@@ -862,10 +866,7 @@
 					external/MoltenVK/include,
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
-				OTHER_LDFLAGS = (
-					"-ObjC",
-					"external/MoltenVK/MoltenVK.xcframework/iOS-arm64_x86_64-simulator/libMoltenVK.a",
-				);
+				OTHER_LDFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PUBLIC_HEADERS_FOLDER_PATH = /usr/local/include;
 				SDKROOT = iphoneos;
@@ -885,10 +886,7 @@
 					external/MoltenVK/include,
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
-				OTHER_LDFLAGS = (
-					"-ObjC",
-					"external/MoltenVK/MoltenVK.xcframework/iOS-arm64_x86_64-simulator/libMoltenVK.a",
-				);
+				OTHER_LDFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PUBLIC_HEADERS_FOLDER_PATH = /usr/local/include;
 				SDKROOT = iphoneos;
