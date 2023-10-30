@@ -601,6 +601,88 @@ void kisVkCreateDevice()
 
     vkGetDeviceQueue(g_kisVkInfo.m_device, g_kisVkInfo.m_iGraphicsQueueFamily, 0, &g_kisVkInfo.m_graphicsQueue);
     vkGetDeviceQueue(g_kisVkInfo.m_device, g_kisVkInfo.m_iPresentQueueFamily, 0, &g_kisVkInfo.m_presentQueue);
+
+    // Create command pool.
+    const VkCommandPoolCreateInfo cmdPoolCreateInfo = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .pNext = nullptr,
+        .queueFamilyIndex = g_kisVkInfo.m_iGraphicsQueueFamily,
+        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+    };
+
+    KIS_VK_CHECK(vkCreateCommandPool(g_kisVkInfo.m_device, &cmdPoolCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_cmdPool));
+
+    const VkCommandBufferAllocateInfo cmdBufferAllocInfo = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        .pNext = nullptr,
+        .commandPool = g_kisVkInfo.m_cmdPool,
+        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        .commandBufferCount = 1,
+    };
+
+    KIS_VK_CHECK(vkAllocateCommandBuffers(g_kisVkInfo.m_device, &cmdBufferAllocInfo, &g_kisVkInfo.m_cmdBuffer));
+
+    const VkSemaphoreCreateInfo semaphoreCreateInfo = {
+        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0
+    };
+
+    vkCreateSemaphore(g_kisVkInfo.m_device, &semaphoreCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_imageAvailableSemaphore);
+
+    vkCreateSemaphore(g_kisVkInfo.m_device, &semaphoreCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_queueExecutedSemaphore);
+
+    const VkFenceCreateInfo fenceCreateInfo = {
+        .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+        .flags = VK_FENCE_CREATE_SIGNALED_BIT,
+    };
+
+    vkCreateFence(g_kisVkInfo.m_device, &fenceCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_queueExecutedFence);
+
+    // Create render pass.
+    const VkAttachmentDescription colorAttachmentDesc = {
+        .format = g_kisVkInfo.m_surfaceFormat.format,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+    };
+
+    const VkAttachmentReference colorAttachmentRef = {
+        .attachment = 0,
+        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    };
+
+    const VkSubpassDescription subpassDesc = {
+        .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+        .colorAttachmentCount = 1,
+        .pColorAttachments = &colorAttachmentRef
+    };
+
+    const VkSubpassDependency dependency = {
+        .srcSubpass = VK_SUBPASS_EXTERNAL,
+        .dstSubpass = 0,
+        .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .srcAccessMask = 0,
+        .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+    };
+
+    const VkRenderPassCreateInfo renderPassCreateInfo = {
+        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+        .pNext = nullptr,
+        .attachmentCount = 1,
+        .pAttachments = &colorAttachmentDesc,
+        .subpassCount = 1,
+        .pSubpasses = &subpassDesc,
+        .dependencyCount = 1,
+        .pDependencies = &dependency,
+    };
+
+    KIS_VK_CHECK(vkCreateRenderPass(g_kisVkInfo.m_device, &renderPassCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_renderPass));
 }
 
 //--------------------------------------------------------------------------
@@ -616,186 +698,8 @@ VkShaderModule kisVkCreateShader(const kisFileBuffer& spirVCode)
     return shader;
 }
 
-//--------------------------------------------------------------------------
-//--------------------------------------------------------------------------
-void kisVkPrepareSwapchain()
+void kisVKLoadAssets()
 {
-    // Surface capabilities.
-    VkSurfaceCapabilitiesKHR surfaceCapabilities;
-    KIS_VK_CHECK(g_vulkanFuncPtrGetPhysicalDeviceSurfaceCapabilitiesKHR(g_kisVkInfo.m_physicalDevice, g_kisVkInfo.m_surface, &surfaceCapabilities));
-
-    g_kisVkInfo.m_swapchainSize = surfaceCapabilities.currentExtent;
-
-    VkPresentModeKHR swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
-
-    uint32_t nSwapchainImages = g_kisVkInfo.m_swapchainImageViews.capacity();
-    if(surfaceCapabilities.maxImageCount > 0 && nSwapchainImages > surfaceCapabilities.maxImageCount)
-    {
-        nSwapchainImages = surfaceCapabilities.maxImageCount;
-    }
-
-    KIS_ASSERT(nSwapchainImages >= surfaceCapabilities.minImageCount);
-
-    VkSurfaceTransformFlagBitsKHR preTransform;
-    if (surfaceCapabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
-    {
-        preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-    }
-    else
-    {
-        preTransform = surfaceCapabilities.currentTransform;
-    }
-
-    // Find a supported composite alpha mode - one of these is guaranteed to be set
-    VkCompositeAlphaFlagBitsKHR compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    const uint32_t k_nCompositeAlphaFlags = 4;
-    VkCompositeAlphaFlagBitsKHR compositeAlphaFlags[k_nCompositeAlphaFlags] = {
-        VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-        VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR,
-        VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR,
-        VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR,
-    };
-
-    for (uint32_t i = 0; i < k_nCompositeAlphaFlags; i++)
-    {
-        if ((surfaceCapabilities.supportedCompositeAlpha & compositeAlphaFlags[i]) != 0)
-        {
-            compositeAlpha = compositeAlphaFlags[i];
-            break;
-        }
-    }
-
-    // Create swapchain.
-    VkSwapchainKHR oldSwapchain = g_kisVkInfo.m_swapchain;
-
-    VkSwapchainCreateInfoKHR swapchainCreateInfo = {
-        .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-        .pNext = nullptr,
-        .surface = g_kisVkInfo.m_surface,
-        .minImageCount = nSwapchainImages,
-        .imageFormat = g_kisVkInfo.m_surfaceFormat.format,
-        .imageColorSpace = g_kisVkInfo.m_surfaceFormat.colorSpace,
-        .imageExtent = g_kisVkInfo.m_swapchainSize,
-        .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-        .preTransform = preTransform,
-        .compositeAlpha = compositeAlpha,
-        .imageArrayLayers = 1,
-        .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
-        .queueFamilyIndexCount = 0,
-        .pQueueFamilyIndices = NULL,
-        .presentMode = swapchainPresentMode,
-        .oldSwapchain = oldSwapchain,
-        .clipped = true,
-    };
-
-    KIS_VK_CHECK(vkCreateSwapchainKHR(g_kisVkInfo.m_device, &swapchainCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_swapchain));
-
-    if(oldSwapchain != VK_NULL_HANDLE)
-    {
-        vkDestroySwapchainKHR(g_kisVkInfo.m_device, oldSwapchain, &g_kisVkAllocCallbacks);
-    }
-
-    // Get swapchain images.
-    g_kisVkInfo.m_swapchainImages.fill();
-    KIS_VK_CHECK(vkGetSwapchainImagesKHR(g_kisVkInfo.m_device, g_kisVkInfo.m_swapchain, g_kisVkInfo.m_swapchainImages.numPointer(), g_kisVkInfo.m_swapchainImages.dataPointer()));
-
-    // Destroy old image views.
-    for(int i = 0 ; i < g_kisVkInfo.m_swapchainImageViews.num(); ++i)
-    {
-        vkDestroyImageView(g_kisVkInfo.m_device, g_kisVkInfo.m_swapchainImageViews[i], &g_kisVkAllocCallbacks);
-    }
-    g_kisVkInfo.m_swapchainImageViews.empty();
-
-    // Create image views.
-    for(int i = 0 ; i < nSwapchainImages; ++i)
-    {
-        VkImageViewCreateInfo imageViewCreateInfo = {
-            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-            .pNext = nullptr,
-            .format = g_kisVkInfo.m_surfaceFormat.format,
-            .components =
-                {
-                    .r = VK_COMPONENT_SWIZZLE_IDENTITY,
-                    .g = VK_COMPONENT_SWIZZLE_IDENTITY,
-                    .b = VK_COMPONENT_SWIZZLE_IDENTITY,
-                    .a = VK_COMPONENT_SWIZZLE_IDENTITY,
-                },
-            .subresourceRange =
-                {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1},
-            .viewType = VK_IMAGE_VIEW_TYPE_2D,
-            .flags = 0,
-            .image = g_kisVkInfo.m_swapchainImages[i]
-        };
-
-        VkImageView imageView = VK_NULL_HANDLE;
-        KIS_VK_CHECK(vkCreateImageView(g_kisVkInfo.m_device, &imageViewCreateInfo, &g_kisVkAllocCallbacks, &imageView));
-        g_kisVkInfo.m_swapchainImageViews.add(imageView);
-    }
-
-}
-
-//--------------------------------------------------------------------------
-//--------------------------------------------------------------------------
-void kisVkPrepareDepth()
-{
-    const VkFormat depthFormat = VK_FORMAT_D16_UNORM;
-    const VkImageCreateInfo imageCreateInfo = {
-        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-        .pNext = NULL,
-        .imageType = VK_IMAGE_TYPE_2D,
-        .format = depthFormat,
-        .extent = {g_kisVkInfo.m_swapchainSize.width, g_kisVkInfo.m_swapchainSize.height, 1},
-        .mipLevels = 1,
-        .arrayLayers = 1,
-        .samples = VK_SAMPLE_COUNT_1_BIT,
-        .tiling = VK_IMAGE_TILING_OPTIMAL,
-        .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-        .flags = 0,
-    };
-
-    VkMemoryRequirements memReqs;
-
-    g_kisVkInfo.m_depthFormat = depthFormat;
-
-    KIS_VK_CHECK(vkCreateImage(g_kisVkInfo.m_device, &imageCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_depthImage));
-    kisVkNameObject(VK_OBJECT_TYPE_IMAGE, (uint64_t)g_kisVkInfo.m_depthImage, "depth_image");
-
-    vkGetImageMemoryRequirements(g_kisVkInfo.m_device, g_kisVkInfo.m_depthImage, &memReqs);
-
-    g_kisVkInfo.m_depthMemAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    g_kisVkInfo.m_depthMemAllocInfo.pNext = nullptr;
-    g_kisVkInfo.m_depthMemAllocInfo.allocationSize = memReqs.size;
-    g_kisVkInfo.m_depthMemAllocInfo.memoryTypeIndex = 0;
-
-    KIS_CHECK(kisVKMemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, g_kisVkInfo.m_depthMemAllocInfo.memoryTypeIndex));
-
-    KIS_VK_CHECK(vkAllocateMemory(g_kisVkInfo.m_device, &g_kisVkInfo.m_depthMemAllocInfo, nullptr, &g_kisVkInfo.m_depthMem));
-    kisVkNameObject(VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t) g_kisVkInfo.m_depthMem, "depth_mem");
-
-    KIS_VK_CHECK(vkBindImageMemory(g_kisVkInfo.m_device, g_kisVkInfo.m_depthImage, g_kisVkInfo.m_depthMem, 0));
-
-    VkImageViewCreateInfo imageViewCreateInfo = {
-        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-        .pNext = nullptr,
-        .image = g_kisVkInfo.m_depthImage,
-        .format = g_kisVkInfo.m_depthFormat,
-        .subresourceRange =
-            {.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1},
-        .flags = 0,
-        .viewType = VK_IMAGE_VIEW_TYPE_2D,
-    };
-
-    KIS_VK_CHECK(vkCreateImageView(g_kisVkInfo.m_device, &imageViewCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_depthImageView));
-    kisVkNameObject(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)g_kisVkInfo.m_depthImageView, "depth_view");
-}
-
-//--------------------------------------------------------------------------
-//--------------------------------------------------------------------------
-void kisVkPrepare()
-{
-    kisVkPrepareSwapchain();
-    kisVkPrepareDepth();
-
     // load triangle
     kisFileBuffer vsBuffer = kisFileBufferCreate("data/triangle/triangle_vert.spv");
     VkShaderModule vsShader = kisVkCreateShader(vsBuffer);
@@ -917,50 +821,6 @@ void kisVkPrepare()
     VkPipelineLayout pipelineLayout;
     KIS_VK_CHECK(vkCreatePipelineLayout(g_kisVkInfo.m_device, &layoutCreateInfo, &g_kisVkAllocCallbacks, &pipelineLayout));
 
-    const VkAttachmentDescription colorAttachmentDesc = {
-        .format = g_kisVkInfo.m_surfaceFormat.format,
-        .samples = VK_SAMPLE_COUNT_1_BIT,
-        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-        .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-    };
-
-    const VkAttachmentReference colorAttachmentRef = {
-        .attachment = 0,
-        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-    };
-
-    const VkSubpassDescription subpassDesc = {
-        .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-        .colorAttachmentCount = 1,
-        .pColorAttachments = &colorAttachmentRef
-    };
-
-    const VkSubpassDependency dependency = {
-        .srcSubpass = VK_SUBPASS_EXTERNAL,
-        .dstSubpass = 0,
-        .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        .srcAccessMask = 0,
-        .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-    };
-
-    const VkRenderPassCreateInfo renderPassCreateInfo = {
-        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-        .pNext = nullptr,
-        .attachmentCount = 1,
-        .pAttachments = &colorAttachmentDesc,
-        .subpassCount = 1,
-        .pSubpasses = &subpassDesc,
-        .dependencyCount = 1,
-        .pDependencies = &dependency,
-    };
-
-    KIS_VK_CHECK(vkCreateRenderPass(g_kisVkInfo.m_device, &renderPassCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_renderPass));
-
     VkGraphicsPipelineCreateInfo pipelineCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
         .pNext = nullptr,
@@ -982,7 +842,203 @@ void kisVkPrepare()
     };
 
     KIS_VK_CHECK(vkCreateGraphicsPipelines(g_kisVkInfo.m_device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_pipeline));
+}
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisVkPrepareResolutionSwapchain(uint32_t width, uint32_t height)
+{
+    // Surface capabilities.
+    VkSurfaceCapabilitiesKHR surfaceCapabilities;
+    KIS_VK_CHECK(g_vulkanFuncPtrGetPhysicalDeviceSurfaceCapabilitiesKHR(g_kisVkInfo.m_physicalDevice, g_kisVkInfo.m_surface, &surfaceCapabilities));
+
+    g_kisVkInfo.m_swapchainSize.width = width;
+    if(g_kisVkInfo.m_swapchainSize.width == 0 || g_kisVkInfo.m_swapchainSize.width > surfaceCapabilities.currentExtent.width)
+    {
+        g_kisVkInfo.m_swapchainSize.width = surfaceCapabilities.currentExtent.width;
+    }
+
+    g_kisVkInfo.m_swapchainSize.height = height;
+    if(g_kisVkInfo.m_swapchainSize.height == 0 || g_kisVkInfo.m_swapchainSize.height > surfaceCapabilities.currentExtent.height)
+    {
+        g_kisVkInfo.m_swapchainSize.height = surfaceCapabilities.currentExtent.height;
+    }
+
+    VkPresentModeKHR swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+
+    uint32_t nSwapchainImages = g_kisVkInfo.m_swapchainImageViews.capacity();
+    if(surfaceCapabilities.maxImageCount > 0 && nSwapchainImages > surfaceCapabilities.maxImageCount)
+    {
+        nSwapchainImages = surfaceCapabilities.maxImageCount;
+    }
+
+    KIS_ASSERT(nSwapchainImages >= surfaceCapabilities.minImageCount);
+
+    VkSurfaceTransformFlagBitsKHR preTransform;
+    if (surfaceCapabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
+    {
+        preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    }
+    else
+    {
+        preTransform = surfaceCapabilities.currentTransform;
+    }
+
+    // Find a supported composite alpha mode - one of these is guaranteed to be set
+    VkCompositeAlphaFlagBitsKHR compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    const uint32_t k_nCompositeAlphaFlags = 4;
+    VkCompositeAlphaFlagBitsKHR compositeAlphaFlags[k_nCompositeAlphaFlags] = {
+        VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+        VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR,
+        VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR,
+        VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR,
+    };
+
+    for (uint32_t i = 0; i < k_nCompositeAlphaFlags; i++)
+    {
+        if ((surfaceCapabilities.supportedCompositeAlpha & compositeAlphaFlags[i]) != 0)
+        {
+            compositeAlpha = compositeAlphaFlags[i];
+            break;
+        }
+    }
+
+    // Create swapchain.
+    VkSwapchainKHR oldSwapchain = g_kisVkInfo.m_swapchain;
+
+    VkSwapchainCreateInfoKHR swapchainCreateInfo = {
+        .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+        .pNext = nullptr,
+        .surface = g_kisVkInfo.m_surface,
+        .minImageCount = nSwapchainImages,
+        .imageFormat = g_kisVkInfo.m_surfaceFormat.format,
+        .imageColorSpace = g_kisVkInfo.m_surfaceFormat.colorSpace,
+        .imageExtent = g_kisVkInfo.m_swapchainSize,
+        .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        .preTransform = preTransform,
+        .compositeAlpha = compositeAlpha,
+        .imageArrayLayers = 1,
+        .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .queueFamilyIndexCount = 0,
+        .pQueueFamilyIndices = NULL,
+        .presentMode = swapchainPresentMode,
+        .oldSwapchain = oldSwapchain,
+        .clipped = true,
+    };
+
+    KIS_VK_CHECK(vkCreateSwapchainKHR(g_kisVkInfo.m_device, &swapchainCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_swapchain));
+
+    // Destroy old image views.
+    for(int i = 0 ; i < g_kisVkInfo.m_swapchainImageViews.num(); ++i)
+    {
+        vkDestroyImageView(g_kisVkInfo.m_device, g_kisVkInfo.m_swapchainImageViews[i], &g_kisVkAllocCallbacks);
+    }
+    g_kisVkInfo.m_swapchainImageViews.empty();
+    
+    // Destroy old swapchain.
+    if(oldSwapchain != VK_NULL_HANDLE)
+    {
+        vkDestroySwapchainKHR(g_kisVkInfo.m_device, oldSwapchain, &g_kisVkAllocCallbacks);
+    }
+
+    // Get swapchain images.
+    g_kisVkInfo.m_swapchainImages.fill();
+    KIS_VK_CHECK(vkGetSwapchainImagesKHR(g_kisVkInfo.m_device, g_kisVkInfo.m_swapchain, g_kisVkInfo.m_swapchainImages.numPointer(), g_kisVkInfo.m_swapchainImages.dataPointer()));
+
+    // Create image views.
+    for(int i = 0 ; i < nSwapchainImages; ++i)
+    {
+        VkImageViewCreateInfo imageViewCreateInfo = {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            .pNext = nullptr,
+            .format = g_kisVkInfo.m_surfaceFormat.format,
+            .components =
+                {
+                    .r = VK_COMPONENT_SWIZZLE_IDENTITY,
+                    .g = VK_COMPONENT_SWIZZLE_IDENTITY,
+                    .b = VK_COMPONENT_SWIZZLE_IDENTITY,
+                    .a = VK_COMPONENT_SWIZZLE_IDENTITY,
+                },
+            .subresourceRange =
+                {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1},
+            .viewType = VK_IMAGE_VIEW_TYPE_2D,
+            .flags = 0,
+            .image = g_kisVkInfo.m_swapchainImages[i]
+        };
+
+        VkImageView imageView = VK_NULL_HANDLE;
+        KIS_VK_CHECK(vkCreateImageView(g_kisVkInfo.m_device, &imageViewCreateInfo, &g_kisVkAllocCallbacks, &imageView));
+        g_kisVkInfo.m_swapchainImageViews.add(imageView);
+    }
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisVkPrepareResolutionDepth()
+{
+    // Destroy old depth.
+    if(g_kisVkInfo.m_depthImage != VK_NULL_HANDLE)
+    {
+        vkDestroyImageView(g_kisVkInfo.m_device, g_kisVkInfo.m_depthImageView, &g_kisVkAllocCallbacks);
+        vkFreeMemory(g_kisVkInfo.m_device, g_kisVkInfo.m_depthMem, &g_kisVkAllocCallbacks);
+        vkDestroyImage(g_kisVkInfo.m_device, g_kisVkInfo.m_depthImage, &g_kisVkAllocCallbacks);
+    }
+
+    const VkFormat depthFormat = VK_FORMAT_D16_UNORM;
+    const VkImageCreateInfo imageCreateInfo = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .pNext = NULL,
+        .imageType = VK_IMAGE_TYPE_2D,
+        .format = depthFormat,
+        .extent = {g_kisVkInfo.m_swapchainSize.width, g_kisVkInfo.m_swapchainSize.height, 1},
+        .mipLevels = 1,
+        .arrayLayers = 1,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .tiling = VK_IMAGE_TILING_OPTIMAL,
+        .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        .flags = 0,
+    };
+
+    VkMemoryRequirements memReqs;
+
+    g_kisVkInfo.m_depthFormat = depthFormat;
+
+    KIS_VK_CHECK(vkCreateImage(g_kisVkInfo.m_device, &imageCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_depthImage));
+    kisVkNameObject(VK_OBJECT_TYPE_IMAGE, (uint64_t)g_kisVkInfo.m_depthImage, "depth_image");
+
+    vkGetImageMemoryRequirements(g_kisVkInfo.m_device, g_kisVkInfo.m_depthImage, &memReqs);
+
+    g_kisVkInfo.m_depthMemAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    g_kisVkInfo.m_depthMemAllocInfo.pNext = nullptr;
+    g_kisVkInfo.m_depthMemAllocInfo.allocationSize = memReqs.size;
+    g_kisVkInfo.m_depthMemAllocInfo.memoryTypeIndex = 0;
+
+    KIS_CHECK(kisVKMemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, g_kisVkInfo.m_depthMemAllocInfo.memoryTypeIndex));
+
+    KIS_VK_CHECK(vkAllocateMemory(g_kisVkInfo.m_device, &g_kisVkInfo.m_depthMemAllocInfo, nullptr, &g_kisVkInfo.m_depthMem));
+    kisVkNameObject(VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t) g_kisVkInfo.m_depthMem, "depth_mem");
+
+    KIS_VK_CHECK(vkBindImageMemory(g_kisVkInfo.m_device, g_kisVkInfo.m_depthImage, g_kisVkInfo.m_depthMem, 0));
+
+    VkImageViewCreateInfo imageViewCreateInfo = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .pNext = nullptr,
+        .image = g_kisVkInfo.m_depthImage,
+        .format = g_kisVkInfo.m_depthFormat,
+        .subresourceRange =
+            {.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1},
+        .flags = 0,
+        .viewType = VK_IMAGE_VIEW_TYPE_2D,
+    };
+
+    KIS_VK_CHECK(vkCreateImageView(g_kisVkInfo.m_device, &imageViewCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_depthImageView));
+    kisVkNameObject(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)g_kisVkInfo.m_depthImageView, "depth_view");
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisVkCreateResolutionFramebuffer()
+{
     for(uint32_t iSwapchainImageView = 0; iSwapchainImageView < g_kisVkInfo.m_swapchainImageViews.num(); iSwapchainImageView++)
     {
         const VkFramebufferCreateInfo frameBufferCreateInfo = {
@@ -999,43 +1055,30 @@ void kisVkPrepare()
         KIS_VK_CHECK(vkCreateFramebuffer(g_kisVkInfo.m_device, &frameBufferCreateInfo, &g_kisVkAllocCallbacks, &frameBuffer));
         g_kisVkInfo.m_frameBuffers.add(frameBuffer);
     }
+}
 
-    // Create command pool.
-    const VkCommandPoolCreateInfo cmdPoolCreateInfo = {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-        .pNext = nullptr,
-        .queueFamilyIndex = g_kisVkInfo.m_iGraphicsQueueFamily,
-        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-    };
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisVkDestroyFramebuffers()
+{
+    for(VkFramebuffer frameBuffer : g_kisVkInfo.m_frameBuffers)
+    {
+        vkDestroyFramebuffer(g_kisVkInfo.m_device, frameBuffer, &g_kisVkAllocCallbacks);
+    }
 
-    KIS_VK_CHECK(vkCreateCommandPool(g_kisVkInfo.m_device, &cmdPoolCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_cmdPool));
+    g_kisVkInfo.m_frameBuffers.empty();
+}
 
-    const VkCommandBufferAllocateInfo cmdBufferAllocInfo = {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-        .pNext = nullptr,
-        .commandPool = g_kisVkInfo.m_cmdPool,
-        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-        .commandBufferCount = 1,
-    };
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisVkPrepareResolution(uint32_t width, uint32_t height)
+{
+    kisVkDestroyFramebuffers();
 
-    KIS_VK_CHECK(vkAllocateCommandBuffers(g_kisVkInfo.m_device, &cmdBufferAllocInfo, &g_kisVkInfo.m_cmdBuffer));
+    kisVkPrepareResolutionSwapchain(width, height);
+    kisVkPrepareResolutionDepth();
 
-    const VkSemaphoreCreateInfo semaphoreCreateInfo = {
-        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0
-    };
-
-    vkCreateSemaphore(g_kisVkInfo.m_device, &semaphoreCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_imageAvailableSemaphore);
-
-    vkCreateSemaphore(g_kisVkInfo.m_device, &semaphoreCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_queueExecutedSemaphore);
-
-    const VkFenceCreateInfo fenceCreateInfo = {
-        .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-        .flags = VK_FENCE_CREATE_SIGNALED_BIT,
-    };
-
-    vkCreateFence(g_kisVkInfo.m_device, &fenceCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_queueExecutedFence);
+    kisVkCreateResolutionFramebuffer();
 }
 
 //--------------------------------------------------------------------------
@@ -1061,7 +1104,8 @@ void kisVkInit(const void* metalLayer)
     kisVkCreateSurface(metalLayer);
     kisVkPickPhysicalDevice();
     kisVkCreateDevice();
-    kisVkPrepare();
+    kisVkPrepareResolution(0, 0);
+    kisVKLoadAssets();
 }
 
 //--------------------------------------------------------------------------
@@ -1163,4 +1207,11 @@ void kisVkRender()
 
     //KIS_VK_CHECK(vkQueuePresentKHR(g_kisVkInfo.m_presentQueue, &presentInfo));
     vkQueuePresentKHR(g_kisVkInfo.m_presentQueue, &presentInfo);
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisVkResize(uint32_t width, uint32_t height)
+{
+    kisVkPrepareResolution(width, height);
 }
