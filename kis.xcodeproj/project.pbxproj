@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7A0B75F22AF04FFA00CD2584 /* kisMath.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A0B75F12AF04FFA00CD2584 /* kisMath.cpp */; };
 		7A452D692AE4000200700DCB /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A452D682AE4000200700DCB /* AppDelegate.swift */; };
 		7A452D6B2AE4000200700DCB /* GameViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A452D6A2AE4000200700DCB /* GameViewController.swift */; };
 		7A452D6E2AE4000200700DCB /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7A452D6C2AE4000200700DCB /* Main.storyboard */; };
@@ -104,6 +105,8 @@
 
 /* Begin PBXFileReference section */
 		7A0B75F02AEF0AFA00CD2584 /* kis-iOS_Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = "kis-iOS_Config.xcconfig"; path = "kis iOS/kis-iOS_Config.xcconfig"; sourceTree = "<group>"; };
+		7A0B75F12AF04FFA00CD2584 /* kisMath.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = kisMath.cpp; path = src/private/kisMath.cpp; sourceTree = "<group>"; };
+		7A0B75F32AF0502100CD2584 /* kisMath.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisMath.h; path = src/public/kisCore/kisMath.h; sourceTree = "<group>"; };
 		7A452D5D2AE4000000700DCB /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 		7A452D5E2AE4000000700DCB /* Renderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Renderer.swift; sourceTree = "<group>"; };
 		7A452D5F2AE4000000700DCB /* ShaderTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShaderTypes.h; sourceTree = "<group>"; };
@@ -261,6 +264,8 @@
 				7A452DED2AE854C100700DCB /* kisMem.h */,
 				7A452DEE2AE854DC00700DCB /* kisMem.cpp */,
 				7A452DFC2AE8610E00700DCB /* kisFile-Swift.swift */,
+				7A0B75F12AF04FFA00CD2584 /* kisMath.cpp */,
+				7A0B75F32AF0502100CD2584 /* kisMath.h */,
 			);
 			path = kisCore;
 			sourceTree = "<group>";
@@ -504,6 +509,7 @@
 				7A452DEF2AE854DC00700DCB /* kisMem.cpp in Sources */,
 				7A452D9D2AE4007C00700DCB /* kisCore.cpp in Sources */,
 				7A452DEC2AE8535600700DCB /* kisFile.cpp in Sources */,
+				7A0B75F22AF04FFA00CD2584 /* kisMath.cpp in Sources */,
 				7A452DFD2AE8610E00700DCB /* kisFile-Swift.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -628,6 +634,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "";
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -680,6 +687,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "";
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -828,6 +836,10 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7LMD5965ZQ;
+				HEADER_SEARCH_PATHS = (
+					external/Eigen,
+					external/glm,
+				);
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -845,6 +857,10 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 7LMD5965ZQ;
+				HEADER_SEARCH_PATHS = (
+					external/Eigen,
+					external/glm,
+				);
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -863,6 +879,8 @@
 				DEVELOPMENT_TEAM = 7LMD5965ZQ;
 				HEADER_SEARCH_PATHS = (
 					kisCore/src/public,
+					external/Eigen,
+					external/glm,
 					external/MoltenVK/include,
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
@@ -883,6 +901,8 @@
 				DEVELOPMENT_TEAM = 7LMD5965ZQ;
 				HEADER_SEARCH_PATHS = (
 					kisCore/src/public,
+					external/Eigen,
+					external/glm,
 					external/MoltenVK/include,
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;

@@ -1,11 +1,11 @@
 #include "kisVk.h"
 
-#include <MoltenVK/mvk_vulkan.h>
-
-#include <kisCore/kisStringANSIStatic.h>
 #include <kisCore/kisArrayStatic.h>
 #include <kisCore/kisFile.h>
+#include <kisCore/kisMath.h>
+#include <kisCore/kisStringANSIStatic.h>
 
+#include <MoltenVK/mvk_vulkan.h>
 #include <stdlib.h>
 
 #ifndef WIN32
@@ -60,6 +60,8 @@ struct kisVkInfo
     kisArrayStatic<VkSemaphore, 3> m_imageAvailSemaphore;
 };
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 struct kisVkRenderContext
 {
     VkRenderPass m_renderPass;
@@ -67,6 +69,12 @@ struct kisVkRenderContext
     VkSemaphore m_imageAvailableSemaphore;
     VkSemaphore m_queueExecutedSemaphore;
     VkFence m_queueExecutedFence;
+};
+
+struct kisVkProp
+{
+    VkBuffer m_vbBuffer;
+    VkDeviceMemory m_memory;
 };
 
 //--------------------------------------------------------------------------
@@ -79,10 +87,19 @@ struct kisVkMemBlock
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
+struct kisVertexFormatPos2Color3
+{
+    kisVec2 m_pos;
+    kisVec3 m_color;
+};
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 kisVkInfo g_kisVkInfo;
 kisVkRenderContext g_kisVkRenderContext;
 VkAllocationCallbacks g_kisVkAllocCallbacks;
 kisArrayStatic<kisVkMemBlock, 2048> g_vulkanMemBlocks;
+kisArrayStatic<kisVkProp, 1024> g_kisVkProps;
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
@@ -709,7 +726,74 @@ void kisVKLoadAssets()
     VkShaderModule psShader = kisVkCreateShader(psBuffer);
     kisFileBufferDestroy(psBuffer);
 
-    VkPipelineShaderStageCreateInfo shaderStages[] = {
+    kisVertexFormatPos2Color3 vertices[] = {
+        { { 0.0f, -0.5f}, {1.0f, 0.0f, 0.0f} },
+        { { 0.5f,  0.5f}, {0.0f, 1.0f, 0.0f} },
+        { {-0.5f,  0.5f}, {0.0f, 0.0f, 1.0f} }
+    };
+
+    static_assert(sizeof(vertices) == sizeof(float) * 15, "Incorrect vb size");
+
+    const size_t vbSize = sizeof(vertices);
+
+    VkBufferCreateInfo vbCreateInfo = {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .size = vbSize,
+        .usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+    };
+
+    kisVkProp triangle;
+    KIS_VK_CHECK(vkCreateBuffer(g_kisVkInfo.m_device, &vbCreateInfo, &g_kisVkAllocCallbacks, &triangle.m_vbBuffer));
+
+    VkMemoryRequirements memReqs;
+    vkGetBufferMemoryRequirements(g_kisVkInfo.m_device, triangle.m_vbBuffer, &memReqs);
+
+    uint32_t memTypeIndex;
+    KIS_CHECK(kisVKMemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, memTypeIndex));
+
+    const VkMemoryAllocateInfo vbMemAllocInfo = {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .allocationSize = memReqs.size,
+        .memoryTypeIndex = memTypeIndex,
+    };
+
+    KIS_VK_CHECK(vkAllocateMemory(g_kisVkInfo.m_device, &vbMemAllocInfo, &g_kisVkAllocCallbacks, &triangle.m_memory));
+
+    vkBindBufferMemory(g_kisVkInfo.m_device, triangle.m_vbBuffer, triangle.m_memory, 0);
+
+    // Map vertex buffer.
+    {
+        void* mappedVBBuffer;
+        vkMapMemory(g_kisVkInfo.m_device, triangle.m_memory, 0, vbSize, 0, &mappedVBBuffer);
+        memcpy(mappedVBBuffer, vertices, vbSize);
+        vkUnmapMemory(g_kisVkInfo.m_device, triangle.m_memory);
+    }
+
+    g_kisVkProps.add(triangle);
+
+    const VkVertexInputBindingDescription vertexInputBindingDescription = {
+        .binding = 0,
+        .stride = sizeof(kisVertexFormatPos2Color3),
+        .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+    };
+
+    const VkVertexInputAttributeDescription vertexInputAttributeDescription[] = {
+        {
+            .binding = 0,
+            .location = 0,
+            .format = VK_FORMAT_R32G32_SFLOAT,
+            .offset = offsetof(kisVertexFormatPos2Color3, m_pos)
+        },
+        {
+           .binding = 0,
+           .location = 1,
+           .format = VK_FORMAT_R32G32B32_SFLOAT,
+           .offset = offsetof(kisVertexFormatPos2Color3, m_color)
+        },
+    };
+
+    const VkPipelineShaderStageCreateInfo shaderStages[] = {
         {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .pNext = nullptr,
@@ -740,10 +824,10 @@ void kisVKLoadAssets()
     const VkPipelineVertexInputStateCreateInfo vertexInfoStateCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
         .pNext = nullptr,
-        .vertexBindingDescriptionCount = 0,
-        .pVertexBindingDescriptions = nullptr,
-        .vertexAttributeDescriptionCount = 0,
-        .pVertexAttributeDescriptions = nullptr,
+        .vertexBindingDescriptionCount = 1,
+        .pVertexBindingDescriptions = &vertexInputBindingDescription,
+        .vertexAttributeDescriptionCount = 2,
+        .pVertexAttributeDescriptions = vertexInputAttributeDescription,
     };
 
     const VkPipelineInputAssemblyStateCreateInfo inputAssemblyCreateInfo = {
@@ -1174,7 +1258,14 @@ void kisVkRender()
     };
     vkCmdSetScissor(g_kisVkInfo.m_cmdBuffer, 0, 1, &scissor);
 
-    vkCmdDraw(g_kisVkInfo.m_cmdBuffer, 3, 1, 0, 0);
+    for(const kisVkProp& prop : g_kisVkProps)
+    {
+        VkBuffer vertexBuffers[] = {prop.m_vbBuffer};
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(g_kisVkInfo.m_cmdBuffer, 0, 1, vertexBuffers, offsets);
+
+        vkCmdDraw(g_kisVkInfo.m_cmdBuffer, 3, 1, 0, 0);
+    }
 
     vkCmdEndRenderPass(g_kisVkInfo.m_cmdBuffer);
 
