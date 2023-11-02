@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		7A0B75F22AF04FFA00CD2584 /* kisMath.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A0B75F12AF04FFA00CD2584 /* kisMath.cpp */; };
+		7A0B75F82AF3038E00CD2584 /* kisVkResources.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A0B75F72AF3038E00CD2584 /* kisVkResources.cpp */; };
+		7A0B75FB2AF3040000CD2584 /* kisVkPrivate.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A0B75FA2AF3040000CD2584 /* kisVkPrivate.cpp */; };
 		7A452D692AE4000200700DCB /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A452D682AE4000200700DCB /* AppDelegate.swift */; };
 		7A452D6B2AE4000200700DCB /* GameViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A452D6A2AE4000200700DCB /* GameViewController.swift */; };
 		7A452D6E2AE4000200700DCB /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7A452D6C2AE4000200700DCB /* Main.storyboard */; };
@@ -107,6 +109,10 @@
 		7A0B75F02AEF0AFA00CD2584 /* kis-iOS_Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = "kis-iOS_Config.xcconfig"; path = "kis iOS/kis-iOS_Config.xcconfig"; sourceTree = "<group>"; };
 		7A0B75F12AF04FFA00CD2584 /* kisMath.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = kisMath.cpp; path = src/private/kisMath.cpp; sourceTree = "<group>"; };
 		7A0B75F32AF0502100CD2584 /* kisMath.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisMath.h; path = src/public/kisCore/kisMath.h; sourceTree = "<group>"; };
+		7A0B75F42AF3033D00CD2584 /* kisVkResources.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisVkResources.h; path = src/private/kisVk/kisVkResources.h; sourceTree = "<group>"; };
+		7A0B75F72AF3038E00CD2584 /* kisVkResources.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = kisVkResources.cpp; path = src/private/kisVk/kisVkResources.cpp; sourceTree = "<group>"; };
+		7A0B75F92AF303CF00CD2584 /* kisVkPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisVkPrivate.h; path = src/private/kisVk/kisVkPrivate.h; sourceTree = "<group>"; };
+		7A0B75FA2AF3040000CD2584 /* kisVkPrivate.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = kisVkPrivate.cpp; path = src/private/kisVk/kisVkPrivate.cpp; sourceTree = "<group>"; };
 		7A452D5D2AE4000000700DCB /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 		7A452D5E2AE4000000700DCB /* Renderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Renderer.swift; sourceTree = "<group>"; };
 		7A452D5F2AE4000000700DCB /* ShaderTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShaderTypes.h; sourceTree = "<group>"; };
@@ -303,6 +309,10 @@
 			children = (
 				7A452DE82AE5437C00700DCB /* kisVk.cpp */,
 				7A452DE72AE5437C00700DCB /* kisVk.h */,
+				7A0B75F42AF3033D00CD2584 /* kisVkResources.h */,
+				7A0B75F72AF3038E00CD2584 /* kisVkResources.cpp */,
+				7A0B75F92AF303CF00CD2584 /* kisVkPrivate.h */,
+				7A0B75FA2AF3040000CD2584 /* kisVkPrivate.cpp */,
 			);
 			name = kisVk;
 			sourceTree = "<group>";
@@ -518,8 +528,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7A0B75FB2AF3040000CD2584 /* kisVkPrivate.cpp in Sources */,
 				7A452DE92AE5437C00700DCB /* kisVk.cpp in Sources */,
 				7A452DE12AE542AC00700DCB /* kisGraphics.cpp in Sources */,
+				7A0B75F82AF3038E00CD2584 /* kisVkResources.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

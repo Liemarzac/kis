@@ -1,11 +1,13 @@
 #include "kisVk.h"
 
+#include "kisVkPrivate.h"
+#include "kisVkResources.h"
+
 #include <kisCore/kisArrayStatic.h>
 #include <kisCore/kisFile.h>
 #include <kisCore/kisMath.h>
 #include <kisCore/kisStringANSIStatic.h>
 
-#include <MoltenVK/mvk_vulkan.h>
 #include <stdlib.h>
 
 #ifndef WIN32
@@ -25,40 +27,6 @@ PFN_vkCreateSwapchainKHR g_vulkanFuncPtrCreateSwapchainKHR = nullptr;
         g_vulkanFuncPtr##entrypoint = (PFN_vk##entrypoint)vkGetInstanceProcAddr(inst, "vk" #entrypoint);      \
         KIS_ASSERT(g_vulkanFuncPtr##entrypoint != nullptr);                                                   \
     }
-
-//--------------------------------------------------------------------------
-//--------------------------------------------------------------------------
-struct kisVkInfo
-{
-    VkInstance m_instance;
-    VkPhysicalDevice m_physicalDevice;
-    VkDevice m_device;
-    VkPhysicalDeviceProperties m_deviceProperties;
-    VkPhysicalDeviceMemoryProperties m_memoryProperties;
-    VkSurfaceKHR m_surface;
-    VkCommandPool m_cmdPool;
-    VkSwapchainKHR m_swapchain;
-    VkSurfaceFormatKHR m_surfaceFormat;
-    VkExtent2D m_swapchainSize;
-    VkCommandBuffer m_cmdBuffer;
-    VkFormat m_depthFormat;
-    VkImage m_depthImage;
-    VkDeviceMemory m_depthMem;
-    VkImageView m_depthImageView;
-    VkMemoryAllocateInfo m_depthMemAllocInfo;
-    VkQueue m_graphicsQueue;
-    VkQueue m_presentQueue;
-    uint32_t m_iGraphicsQueueFamily;
-    uint32_t m_iPresentQueueFamily;
-    bool m_bValidate;
-    kisArrayStatic<const char*, 64> m_instanceExtensionNames;
-    kisArrayStatic<const char*, 64> m_deviceExtensionNames;
-    kisArrayStatic<const char*, 16> m_layerNames;
-    kisArrayStatic<VkImage, 3> m_swapchainImages;
-    kisArrayStatic<VkImageView, 3> m_swapchainImageViews;
-    kisArrayStatic<VkFramebuffer, 3> m_frameBuffers;
-    kisArrayStatic<VkSemaphore, 3> m_imageAvailSemaphore;
-};
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
@@ -95,9 +63,7 @@ struct kisVertexFormatPos2Color3
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-kisVkInfo g_kisVkInfo;
 kisVkRenderContext g_kisVkRenderContext;
-VkAllocationCallbacks g_kisVkAllocCallbacks;
 kisArrayStatic<kisVkMemBlock, 2048> g_vulkanMemBlocks;
 kisArrayStatic<kisVkProp, 1024> g_kisVkProps;
 
@@ -268,30 +234,6 @@ void kisVkNameObject(VkObjectType objectType, uint64_t vkHandle, const char* for
     };
 
     KIS_VK_CHECK(vkSetDebugUtilsObjectNameEXT(g_kisVkInfo.m_device, &objNameInfo));
-}
-
-//--------------------------------------------------------------------------
-//--------------------------------------------------------------------------
-bool kisVKMemoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, uint32_t& typeIndex)
-{
-    // Search memtypes to find first index with those properties
-    for(uint32_t i = 0; i < VK_MAX_MEMORY_TYPES; i++)
-    {
-        if((typeBits & 1) != 0)
-        {
-            // Type is available, does it match user properties?
-            if((g_kisVkInfo.m_memoryProperties.memoryTypes[i].propertyFlags & requirementsMask) != 0)
-            {
-                typeIndex = i;
-                return true;
-            }
-        }
-
-        typeBits >>= 1;
-    }
-
-    // No memory types matched, return failure
-    return false;
 }
 
 //--------------------------------------------------------------------------
@@ -736,39 +678,8 @@ void kisVKLoadAssets()
 
     const size_t vbSize = sizeof(vertices);
 
-    VkBufferCreateInfo vbCreateInfo = {
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .size = vbSize,
-        .usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE
-    };
-
     kisVkProp triangle;
-    KIS_VK_CHECK(vkCreateBuffer(g_kisVkInfo.m_device, &vbCreateInfo, &g_kisVkAllocCallbacks, &triangle.m_vbBuffer));
-
-    VkMemoryRequirements memReqs;
-    vkGetBufferMemoryRequirements(g_kisVkInfo.m_device, triangle.m_vbBuffer, &memReqs);
-
-    uint32_t memTypeIndex;
-    KIS_CHECK(kisVKMemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, memTypeIndex));
-
-    const VkMemoryAllocateInfo vbMemAllocInfo = {
-        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-        .allocationSize = memReqs.size,
-        .memoryTypeIndex = memTypeIndex,
-    };
-
-    KIS_VK_CHECK(vkAllocateMemory(g_kisVkInfo.m_device, &vbMemAllocInfo, &g_kisVkAllocCallbacks, &triangle.m_memory));
-
-    vkBindBufferMemory(g_kisVkInfo.m_device, triangle.m_vbBuffer, triangle.m_memory, 0);
-
-    // Map vertex buffer.
-    {
-        void* mappedVBBuffer;
-        vkMapMemory(g_kisVkInfo.m_device, triangle.m_memory, 0, vbSize, 0, &mappedVBBuffer);
-        memcpy(mappedVBBuffer, vertices, vbSize);
-        vkUnmapMemory(g_kisVkInfo.m_device, triangle.m_memory);
-    }
+    kisVkCreateVertexBuffer(vertices, vbSize, triangle.m_vbBuffer, triangle.m_memory);
 
     g_kisVkProps.add(triangle);
 

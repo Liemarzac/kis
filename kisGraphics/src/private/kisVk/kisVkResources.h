@@ -1,16 +1,12 @@
 #pragma once
 
-#include <kisCore/kisCore.h>
+#include "kisVkPrivate.h"
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void kisVkInit(const void* metalLayer);
-void kisVkShutdown();
+bool kisVKMemoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, uint32_t& typeIndex);
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void kisVkRender();
+void kisVkCreateVertexBuffer(void* vertices, VkDeviceSize size, VkBuffer& buffer, VkDeviceMemory& memory);
 
-//--------------------------------------------------------------------------
-//--------------------------------------------------------------------------
-void kisVkResize(uint32_t width, uint32_t height);
