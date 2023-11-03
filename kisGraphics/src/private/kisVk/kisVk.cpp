@@ -988,8 +988,7 @@ void kisVkPrepareResolutionDepth()
     if(g_kisVkInfo.m_depthImage != VK_NULL_HANDLE)
     {
         vkDestroyImageView(g_kisVkInfo.m_device, g_kisVkInfo.m_depthImageView, &g_kisVkAllocCallbacks);
-        vkFreeMemory(g_kisVkInfo.m_device, g_kisVkInfo.m_depthMem, &g_kisVkAllocCallbacks);
-        vkDestroyImage(g_kisVkInfo.m_device, g_kisVkInfo.m_depthImage, &g_kisVkAllocCallbacks);
+        vmaDestroyImage(g_kisVkInfo.m_vmaAllocator, g_kisVkInfo.m_depthImage, g_kisVkInfo.m_depthAlloc);
     }
 
     const VkFormat depthFormat = VK_FORMAT_D16_UNORM;
@@ -1007,26 +1006,16 @@ void kisVkPrepareResolutionDepth()
         .flags = 0,
     };
 
-    VkMemoryRequirements memReqs;
-
     g_kisVkInfo.m_depthFormat = depthFormat;
 
-    KIS_VK_CHECK(vkCreateImage(g_kisVkInfo.m_device, &imageCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_depthImage));
+    const VmaAllocationCreateInfo allocCreateInfo = {
+        .usage = VMA_MEMORY_USAGE_GPU_ONLY,
+        .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
+    };
+
+    vmaCreateImage(g_kisVkInfo.m_vmaAllocator, &imageCreateInfo, &allocCreateInfo, &g_kisVkInfo.m_depthImage, &g_kisVkInfo.m_depthAlloc, nullptr);
+
     kisVkNameObject(VK_OBJECT_TYPE_IMAGE, (uint64_t)g_kisVkInfo.m_depthImage, "depth_image");
-
-    vkGetImageMemoryRequirements(g_kisVkInfo.m_device, g_kisVkInfo.m_depthImage, &memReqs);
-
-    g_kisVkInfo.m_depthMemAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    g_kisVkInfo.m_depthMemAllocInfo.pNext = nullptr;
-    g_kisVkInfo.m_depthMemAllocInfo.allocationSize = memReqs.size;
-    g_kisVkInfo.m_depthMemAllocInfo.memoryTypeIndex = 0;
-
-    KIS_CHECK(kisVKMemoryTypeFromProperties(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, g_kisVkInfo.m_depthMemAllocInfo.memoryTypeIndex));
-
-    KIS_VK_CHECK(vkAllocateMemory(g_kisVkInfo.m_device, &g_kisVkInfo.m_depthMemAllocInfo, nullptr, &g_kisVkInfo.m_depthMem));
-    kisVkNameObject(VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t) g_kisVkInfo.m_depthMem, "depth_mem");
-
-    KIS_VK_CHECK(vkBindImageMemory(g_kisVkInfo.m_device, g_kisVkInfo.m_depthImage, g_kisVkInfo.m_depthMem, 0));
 
     VkImageViewCreateInfo imageViewCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,

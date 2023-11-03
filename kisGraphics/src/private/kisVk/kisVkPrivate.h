@@ -32,7 +32,7 @@ struct kisVkInfo
     VkCommandBuffer m_cmdBuffer;
     VkFormat m_depthFormat;
     VkImage m_depthImage;
-    VkDeviceMemory m_depthMem;
+    VmaAllocation m_depthAlloc;
     VkImageView m_depthImageView;
     VkMemoryAllocateInfo m_depthMemAllocInfo;
     VkQueue m_graphicsQueue;
