@@ -894,6 +894,7 @@
 					external/Eigen,
 					external/glm,
 					external/MoltenVK/include,
+					external/VulkanMemoryAllocator/include,
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				OTHER_LDFLAGS = "";
@@ -916,6 +917,7 @@
 					external/Eigen,
 					external/glm,
 					external/MoltenVK/include,
+					external/VulkanMemoryAllocator/include,
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				OTHER_LDFLAGS = "";

@@ -3,6 +3,13 @@
 #include <kisCore/kisArrayStatic.h>
 
 #include <MoltenVK/mvk_vulkan.h>
+#pragma clang system_header
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdocumentation"
+#pragma clang diagnostic ignored "-Wnullability-completeness"
+#pragma clang diagnostic ignored "-Wall"
+#include <vk_mem_alloc.h>
+#pragma clang diagnostic pop
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
@@ -30,6 +37,7 @@ struct kisVkInfo
     VkMemoryAllocateInfo m_depthMemAllocInfo;
     VkQueue m_graphicsQueue;
     VkQueue m_presentQueue;
+    VmaAllocator m_vmaAllocator;
     uint32_t m_iGraphicsQueueFamily;
     uint32_t m_iPresentQueueFamily;
     bool m_bValidate;

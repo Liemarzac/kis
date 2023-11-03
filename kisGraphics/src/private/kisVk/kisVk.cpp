@@ -42,7 +42,7 @@ struct kisVkRenderContext
 struct kisVkProp
 {
     VkBuffer m_vbBuffer;
-    VkDeviceMemory m_memory;
+    VmaAllocation m_vbAlloc;
 };
 
 //--------------------------------------------------------------------------
@@ -561,6 +561,17 @@ void kisVkCreateDevice()
     vkGetDeviceQueue(g_kisVkInfo.m_device, g_kisVkInfo.m_iGraphicsQueueFamily, 0, &g_kisVkInfo.m_graphicsQueue);
     vkGetDeviceQueue(g_kisVkInfo.m_device, g_kisVkInfo.m_iPresentQueueFamily, 0, &g_kisVkInfo.m_presentQueue);
 
+    // Initialize Vulkan Memory Allocator
+    const VmaAllocatorCreateInfo vmaCreateInfo = {
+        .flags = VMA_ALLOCATOR_CREATE_EXTERNALLY_SYNCHRONIZED_BIT,
+        .instance = g_kisVkInfo.m_instance,
+        .physicalDevice = g_kisVkInfo.m_physicalDevice,
+        .device = g_kisVkInfo.m_device,
+        .pAllocationCallbacks = &g_kisVkAllocCallbacks,
+    };
+
+    KIS_VK_CHECK(vmaCreateAllocator(&vmaCreateInfo, &g_kisVkInfo.m_vmaAllocator));
+
     // Create command pool.
     const VkCommandPoolCreateInfo cmdPoolCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
@@ -657,6 +668,8 @@ VkShaderModule kisVkCreateShader(const kisFileBuffer& spirVCode)
     return shader;
 }
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 void kisVKLoadAssets()
 {
     // load triangle
@@ -679,7 +692,7 @@ void kisVKLoadAssets()
     const size_t vbSize = sizeof(vertices);
 
     kisVkProp triangle;
-    kisVkCreateVertexBuffer(vertices, vbSize, triangle.m_vbBuffer, triangle.m_memory);
+    kisVkCreateVertexBuffer(vertices, vbSize, triangle.m_vbBuffer, triangle.m_vbAlloc);
 
     g_kisVkProps.add(triangle);
 

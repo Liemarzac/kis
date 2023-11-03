@@ -28,37 +28,7 @@ bool kisVKMemoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, 
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void kisVkCreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& memory)
-{
-    VkBufferCreateInfo bufferCreateInfo = {
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .size = size,
-        .usage = usage,
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE
-    };
-
-    KIS_VK_CHECK(vkCreateBuffer(g_kisVkInfo.m_device, &bufferCreateInfo, &g_kisVkAllocCallbacks, &buffer));
-
-    VkMemoryRequirements memReqs;
-    vkGetBufferMemoryRequirements(g_kisVkInfo.m_device, buffer, &memReqs);
-
-    uint32_t memTypeIndex;
-    KIS_CHECK(kisVKMemoryTypeFromProperties(memReqs.memoryTypeBits, properties, memTypeIndex));
-
-    const VkMemoryAllocateInfo memAllocInfo = {
-        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-        .allocationSize = memReqs.size,
-        .memoryTypeIndex = memTypeIndex,
-    };
-
-    KIS_VK_CHECK(vkAllocateMemory(g_kisVkInfo.m_device, &memAllocInfo, &g_kisVkAllocCallbacks, &memory));
-
-    vkBindBufferMemory(g_kisVkInfo.m_device, buffer, memory, 0);
-}
-
-//--------------------------------------------------------------------------
-//--------------------------------------------------------------------------
-void kisVKCopyBuffer(VkBuffer dst, VkBuffer src, VkDeviceSize size)
+void kisVkCopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size)
 {
     const VkCommandBufferAllocateInfo cmdBufferAllocInfo = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
@@ -101,26 +71,55 @@ void kisVKCopyBuffer(VkBuffer dst, VkBuffer src, VkDeviceSize size)
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void kisVkCreateVertexBuffer(void* vertices, VkDeviceSize size, VkBuffer& buffer, VkDeviceMemory& memory)
+void kisVkCreateVertexBuffer(void* vertices, VkDeviceSize size, VkBuffer& buffer, VmaAllocation& alloc)
 {
+    // Create staging buffer.
     VkBuffer stagingBuffer;
-    VkDeviceMemory stagingMemory;
+    VmaAllocation stagingBufferAlloc;
+    VmaAllocationInfo stagingBufferAllocInfo;
 
-    kisVkCreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingMemory);
+    const VkBufferCreateInfo stagingBufferCreateInfo = {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .size = size,
+        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+    };
+
+    const VmaAllocationCreateInfo allocCreateInfo = {
+        .usage = VMA_MEMORY_USAGE_AUTO,
+        .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+    };
+
+    vmaCreateBuffer(g_kisVkInfo.m_vmaAllocator, &stagingBufferCreateInfo, &allocCreateInfo, &stagingBuffer, &stagingBufferAlloc, &stagingBufferAllocInfo);
 
     // Map vertex buffer.
     {
         void* mappedBuffer;
-        vkMapMemory(g_kisVkInfo.m_device, stagingMemory, 0, size, 0, &mappedBuffer);
+        vmaMapMemory(g_kisVkInfo.m_vmaAllocator, stagingBufferAlloc, &mappedBuffer);
         memcpy(mappedBuffer, vertices, size);
-        vkUnmapMemory(g_kisVkInfo.m_device, stagingMemory);
+        vmaUnmapMemory(g_kisVkInfo.m_vmaAllocator, stagingBufferAlloc);
     }
 
-    kisVkCreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, buffer, memory);
+    // Create device buffer
+    VmaAllocation deviceBufferAllocation;
+    VmaAllocationInfo deviceBufferAllocationInfo;
 
-    kisVKCopyBuffer(buffer, stagingBuffer , size);
+    const VkBufferCreateInfo deviceBufferCreateInfo = {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .size = size,
+        .usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+    };
 
-    vkFreeMemory(g_kisVkInfo.m_device, stagingMemory, &g_kisVkAllocCallbacks);
-    vkDestroyBuffer(g_kisVkInfo.m_device, stagingBuffer, &g_kisVkAllocCallbacks);
+    const VmaAllocationCreateInfo deviceAllocCreateInfo = {
+        .usage = VMA_MEMORY_USAGE_AUTO,
+        .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
+    };
+
+    vmaCreateBuffer(g_kisVkInfo.m_vmaAllocator, &deviceBufferCreateInfo, &deviceAllocCreateInfo, &buffer, &deviceBufferAllocation, &deviceBufferAllocationInfo);
+
+    kisVkCopyBuffer(stagingBuffer, buffer, size);
+
+    vmaDestroyBuffer(g_kisVkInfo.m_vmaAllocator, stagingBuffer, stagingBufferAlloc);
 }
 
