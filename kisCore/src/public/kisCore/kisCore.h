@@ -61,3 +61,7 @@ void kisLogTableFooter();
 #define KIS_ASSERT(CONDITION)
 #define KIS_CHECK(CONDITION) CONDITION
 #endif
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+#define KIS_ARRAY_COUNT(X) sizeof(X)/sizeof(X[0])

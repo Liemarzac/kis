@@ -69,9 +69,7 @@ void kisVkCopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size)
     vkFreeCommandBuffers(g_kisVkInfo.m_device, g_kisVkInfo.m_cmdPool, 1, &cmdBuffer);
 }
 
-//--------------------------------------------------------------------------
-//--------------------------------------------------------------------------
-void kisVkCreateVertexBuffer(void* vertices, VkDeviceSize size, VkBuffer& buffer, VmaAllocation& alloc)
+void kisVkCreateBuffer(void* data, VkDeviceSize size, VkBufferUsageFlags usage, VkBuffer& buffer, VmaAllocation& alloc)
 {
     // Create staging buffer.
     VkBuffer stagingBuffer;
@@ -96,18 +94,17 @@ void kisVkCreateVertexBuffer(void* vertices, VkDeviceSize size, VkBuffer& buffer
     {
         void* mappedBuffer;
         vmaMapMemory(g_kisVkInfo.m_vmaAllocator, stagingBufferAlloc, &mappedBuffer);
-        memcpy(mappedBuffer, vertices, size);
+        memcpy(mappedBuffer, data, size);
         vmaUnmapMemory(g_kisVkInfo.m_vmaAllocator, stagingBufferAlloc);
     }
 
     // Create device buffer
-    VmaAllocation deviceBufferAllocation;
     VmaAllocationInfo deviceBufferAllocationInfo;
 
     const VkBufferCreateInfo deviceBufferCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
         .size = size,
-        .usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        .usage = usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE
     };
 
@@ -116,10 +113,24 @@ void kisVkCreateVertexBuffer(void* vertices, VkDeviceSize size, VkBuffer& buffer
         .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
     };
 
-    vmaCreateBuffer(g_kisVkInfo.m_vmaAllocator, &deviceBufferCreateInfo, &deviceAllocCreateInfo, &buffer, &deviceBufferAllocation, &deviceBufferAllocationInfo);
+    vmaCreateBuffer(g_kisVkInfo.m_vmaAllocator, &deviceBufferCreateInfo, &deviceAllocCreateInfo, &buffer, &alloc, &deviceBufferAllocationInfo);
 
     kisVkCopyBuffer(stagingBuffer, buffer, size);
 
     vmaDestroyBuffer(g_kisVkInfo.m_vmaAllocator, stagingBuffer, stagingBufferAlloc);
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisVkCreateVertexBuffer(void* vertices, VkDeviceSize size, VkBuffer& buffer, VmaAllocation& alloc)
+{
+    kisVkCreateBuffer(vertices, size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, buffer, alloc);
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisVkCreateIndexBuffer(void* indices, VkDeviceSize size, VkBuffer& buffer, VmaAllocation& alloc)
+{
+    kisVkCreateBuffer(indices, size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, buffer, alloc);
 }
 

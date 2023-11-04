@@ -41,8 +41,13 @@ struct kisVkRenderContext
 
 struct kisVkProp
 {
-    VkBuffer m_vbBuffer;
-    VmaAllocation m_vbAlloc;
+    VkBuffer m_vertexBuffer;
+    VmaAllocation m_vertexBufferAlloc;
+    VkBuffer m_indexBuffer;
+    VmaAllocation m_indexBufferAlloc;
+    uint32_t m_nVertices;
+    uint32_t m_nIndices;
+    VkIndexType m_indexType;
 };
 
 //--------------------------------------------------------------------------
@@ -682,19 +687,26 @@ void kisVKLoadAssets()
     kisFileBufferDestroy(psBuffer);
 
     kisVertexFormatPos2Color3 vertices[] = {
-        { { 0.0f, -0.5f}, {1.0f, 0.0f, 0.0f} },
-        { { 0.5f,  0.5f}, {0.0f, 1.0f, 0.0f} },
-        { {-0.5f,  0.5f}, {0.0f, 0.0f, 1.0f} }
+        { {-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f} },
+        { { 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f} },
+        { { 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f} },
+        { {-0.5f,  0.5f}, {1.0f, 1.0f, 1.0f} }
     };
 
-    static_assert(sizeof(vertices) == sizeof(float) * 15, "Incorrect vb size");
+    uint16_t indices[] = {
+        0, 1, 2, 2, 3, 0
+    };
 
-    const size_t vbSize = sizeof(vertices);
+    const size_t vertexBufferSize = sizeof(vertices);
+    const size_t indexBufferSize = sizeof(indices);
 
-    kisVkProp triangle;
-    kisVkCreateVertexBuffer(vertices, vbSize, triangle.m_vbBuffer, triangle.m_vbAlloc);
-
-    g_kisVkProps.add(triangle);
+    kisVkProp rectangle;
+    kisVkCreateVertexBuffer(vertices, vertexBufferSize, rectangle.m_vertexBuffer, rectangle.m_vertexBufferAlloc);
+    kisVkCreateIndexBuffer(indices, indexBufferSize, rectangle.m_indexBuffer, rectangle.m_indexBufferAlloc);
+    rectangle.m_nVertices = KIS_ARRAY_COUNT(vertices);
+    rectangle.m_nIndices = KIS_ARRAY_COUNT(indices);
+    rectangle.m_indexType = sizeof(indices[0]) == sizeof(uint16_t) ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
+    g_kisVkProps.add(rectangle);
 
     const VkVertexInputBindingDescription vertexInputBindingDescription = {
         .binding = 0,
@@ -1173,11 +1185,19 @@ void kisVkRender()
 
     for(const kisVkProp& prop : g_kisVkProps)
     {
-        VkBuffer vertexBuffers[] = {prop.m_vbBuffer};
+        VkBuffer vertexBuffers[] = {prop.m_vertexBuffer};
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(g_kisVkInfo.m_cmdBuffer, 0, 1, vertexBuffers, offsets);
 
-        vkCmdDraw(g_kisVkInfo.m_cmdBuffer, 3, 1, 0, 0);
+        if(prop.m_indexBuffer != VK_NULL_HANDLE)
+        {
+            vkCmdBindIndexBuffer(g_kisVkInfo.m_cmdBuffer, prop.m_indexBuffer, 0, prop.m_indexType);
+            vkCmdDrawIndexed(g_kisVkInfo.m_cmdBuffer, prop.m_nIndices, 1, 0, 0, 0);
+        }
+        else
+        {
+            vkCmdDraw(g_kisVkInfo.m_cmdBuffer, prop.m_nVertices, 1, 0, 0);
+        }
     }
 
     vkCmdEndRenderPass(g_kisVkInfo.m_cmdBuffer);

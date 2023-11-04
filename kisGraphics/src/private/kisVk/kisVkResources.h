@@ -10,3 +10,7 @@ bool kisVKMemoryTypeFromProperties(uint32_t typeBits, VkFlags requirementsMask, 
 //--------------------------------------------------------------------------
 void kisVkCreateVertexBuffer(void* vertices, VkDeviceSize size, VkBuffer& buffer, VmaAllocation& alloc);
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisVkCreateIndexBuffer(void* indices, VkDeviceSize size, VkBuffer& buffer, VmaAllocation& alloc);
+
