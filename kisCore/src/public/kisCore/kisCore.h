@@ -14,6 +14,29 @@ const size_t    k_kisCoreMaxPathSize = 256;
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
+#define KIS_DEBUG
+#if defined(KIS_DEBUG)
+#define KIS_ASSERT(CONDITION) if((CONDITION) == false){kisLogError("Assertion Failed"); raise(SIGTRAP);}
+#define KIS_CHECK(CONDITION) KIS_ASSERT(CONDITION)
+#else
+#define KIS_ASSERT(CONDITION)
+#define KIS_CHECK(CONDITION) CONDITION
+#endif
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+#define KIS_ARRAY_COUNT(X) sizeof(X)/sizeof(X[0])
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisLog(const char* format, ...);
+void kisLogError(const char* format, ...);
+void kisLogTableHeader(const char* format, ...);
+void kisLogTableEntry(const char* format, ...);
+void kisLogTableFooter();
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 struct kisCoreInitParams
 {
     const char* m_dataPath;
@@ -30,7 +53,7 @@ void kisCoreStringCopy(char* dst, size_t dstSize, const char* src);
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 template<typename T>
-T kisCoreMin(T a, T b)
+T kisMin(T a, T b)
 {
     return a < b ? a : b;
 }
@@ -38,30 +61,24 @@ T kisCoreMin(T a, T b)
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 template<typename T>
-T kisCoreMax(T a, T b)
+T kisMax(T a, T b)
 {
     return a > b ? a : b;
 }
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void kisLog(const char* format, ...);
-void kisLogError(const char* format, ...);
-void kisLogTableHeader(const char* format, ...);
-void kisLogTableEntry(const char* format, ...);
-void kisLogTableFooter();
+template<typename T>
+bool kisIsPowerOf2(T val)
+{
+    return (val & (val - 1)) == 0;
+}
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-#define KIS_DEBUG
-#if defined(KIS_DEBUG)
-#define KIS_ASSERT(CONDITION) if((CONDITION) == false){kisLogError("Assertion Failed"); raise(SIGTRAP);}
-#define KIS_CHECK(CONDITION) KIS_ASSERT(CONDITION)
-#else
-#define KIS_ASSERT(CONDITION)
-#define KIS_CHECK(CONDITION) CONDITION
-#endif
-
-//--------------------------------------------------------------------------
-//--------------------------------------------------------------------------
-#define KIS_ARRAY_COUNT(X) sizeof(X)/sizeof(X[0])
+template<typename T>
+T kisAlignPowerOf2(T val, uint32_t align)
+{
+    KIS_CHECK(align > 0 && kisIsPowerOf2(align));
+    return val + ((align - 1) & (~(align - 1)));
+}

@@ -27,7 +27,7 @@ void kisCoreStringCopy(char* dst, size_t dstSize, const char* src)
     KIS_ASSERT(src != nullptr);
 
     const size_t srcSize = strlen(src) + 1;
-    const size_t copySize = kisCoreMin(srcSize, dstSize);
+    const size_t copySize = kisMin(srcSize, dstSize);
     memcpy(dst, src, copySize);
     dst[dstSize - 1] = '\0';
 }

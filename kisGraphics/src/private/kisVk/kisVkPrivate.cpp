@@ -9,5 +9,8 @@
 
 #include "kisVkPrivate.h"
 
+
 kisVkInfo g_kisVkInfo;
 VkAllocationCallbacks g_kisVkAllocCallbacks;
+
+kisStaticArray<kisArray<kisVkObject>, k_kisVkMaxNumImages> g_kisVkObjectsPerImage;

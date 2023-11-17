@@ -3,10 +3,10 @@
 #include "kisVkPrivate.h"
 #include "kisVkResources.h"
 
-#include <kisCore/kisArrayStatic.h>
 #include <kisCore/kisFile.h>
 #include <kisCore/kisMath.h>
 #include <kisCore/kisStringANSIStatic.h>
+#include <kisCore/kisTime.h>
 
 #include <stdlib.h>
 
@@ -34,12 +34,13 @@ struct kisVkRenderContext
 {
     VkRenderPass m_renderPass;
     VkPipeline m_pipeline;
+    VkPipelineLayout m_pipelineLayout;
     VkSemaphore m_imageAvailableSemaphore;
     VkSemaphore m_queueExecutedSemaphore;
     VkFence m_queueExecutedFence;
 };
 
-struct kisVkProp
+struct kisVkMesh
 {
     VkBuffer m_vertexBuffer;
     VmaAllocation m_vertexBufferAlloc;
@@ -69,8 +70,8 @@ struct kisVertexFormatPos2Color3
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 kisVkRenderContext g_kisVkRenderContext;
-kisArrayStatic<kisVkMemBlock, 2048> g_vulkanMemBlocks;
-kisArrayStatic<kisVkProp, 1024> g_kisVkProps;
+kisFixedArray<kisVkMemBlock, 2048> g_vulkanMemBlocks;
+kisFixedArray<kisVkMesh, 1024> g_kisVkProps;
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
@@ -245,12 +246,11 @@ void kisVkNameObject(VkObjectType objectType, uint64_t vkHandle, const char* for
 //--------------------------------------------------------------------------
 void kisVkInitInstanceLayers()
 {
-    const uint32_t k_maxEntries = 100;
-    kisArrayStatic<VkLayerProperties, k_maxEntries> propertiesArray(kisArrayStaticInit::Fill);
+    kisFixedArray<VkLayerProperties, 100> propertiesArray;
 
     bool bValidationLayerActive = false;
-    
-    vkEnumerateInstanceLayerProperties(propertiesArray.numPointer(), propertiesArray.dataPointer());
+
+    vkEnumerateInstanceLayerProperties(propertiesArray.numExternal(), propertiesArray.dataPointer());
 
     const char* k_validationLayerName = "VK_LAYER_KHRONOS_validation";
 
@@ -279,10 +279,9 @@ void kisVkInitInstanceLayers()
 //--------------------------------------------------------------------------
 void kisVkInitInstanceExtensions(bool& bPortabilityEnumerationActive)
 {
-    const uint32_t k_maxEntries = 100;
-    kisArrayStatic<VkExtensionProperties, k_maxEntries> propertiesArray(kisArrayStaticInit::Fill);
+    kisFixedArray<VkExtensionProperties, 100> propertiesArray;
 
-    vkEnumerateInstanceExtensionProperties(VK_NULL_HANDLE, propertiesArray.numPointer(), propertiesArray.dataPointer());
+    vkEnumerateInstanceExtensionProperties(VK_NULL_HANDLE, propertiesArray.numExternal(), propertiesArray.dataPointer());
 
     bPortabilityEnumerationActive = false;
 
@@ -401,26 +400,24 @@ void kisVkPickPhysicalDevice()
     g_kisVkInfo.m_physicalDevice = nullptr;
     g_kisVkInfo.m_iGraphicsQueueFamily = k_kisCoreInvalidIndex;
     g_kisVkInfo.m_iPresentQueueFamily = k_kisCoreInvalidIndex;
-    
-    const uint32_t k_maxPhysicalDevices = 16;
-    kisArrayStatic<VkPhysicalDevice, k_maxPhysicalDevices> physicalDevices(kisArrayStaticInit::Fill);
 
-    KIS_VK_CHECK(vkEnumeratePhysicalDevices(g_kisVkInfo.m_instance, physicalDevices.numPointer(), physicalDevices.dataPointer()));
+    kisFixedArray<VkPhysicalDevice, 16> physicalDevices;
 
-    const uint32_t k_maxQueueFamilityProperties = 32;
-    kisArrayStatic<VkQueueFamilyProperties, k_maxQueueFamilityProperties> queueFamilyProperties(kisArrayStaticInit::Fill);
+    KIS_VK_CHECK(vkEnumeratePhysicalDevices(g_kisVkInfo.m_instance, physicalDevices.numExternal(), physicalDevices.dataPointer()));
+
+    kisFixedArray<VkQueueFamilyProperties, 32> queueFamilyProperties;
 
     int iBestDevice = k_kisCoreInvalidIndex;
     uint32_t bestImageDimension = 0;
     bool bFoundDiscreteGPU = false;
+    VkPhysicalDeviceProperties properties;
 
     for(uint32_t iDevice = 0; iDevice < physicalDevices.num(); ++iDevice)
     {
         VkPhysicalDevice& device = physicalDevices[iDevice];
-        VkPhysicalDeviceProperties properties;
-        vkGetPhysicalDeviceProperties(device, &properties);
 
-        vkGetPhysicalDeviceQueueFamilyProperties(device, queueFamilyProperties.numPointer(), queueFamilyProperties.dataPointer());
+        vkGetPhysicalDeviceProperties(device, &properties);
+        vkGetPhysicalDeviceQueueFamilyProperties(device, queueFamilyProperties.numExternal(), queueFamilyProperties.dataPointer());
 
         // Make sure that the physical device supports both graphics and present.
         int iGraphicsQueueFamily = k_kisCoreInvalidIndex;
@@ -469,7 +466,6 @@ void kisVkPickPhysicalDevice()
                 iBestDevice = iDevice;
                 bestImageDimension = properties.limits.maxImageDimension2D;
                 g_kisVkInfo.m_physicalDevice = device;
-                g_kisVkInfo.m_deviceProperties = properties;
             }
 
             if(properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
@@ -483,9 +479,10 @@ void kisVkPickPhysicalDevice()
     KIS_ASSERT(g_kisVkInfo.m_iPresentQueueFamily != k_kisCoreInvalidIndex);
     KIS_ASSERT(g_kisVkInfo.m_iPresentQueueFamily != k_kisCoreInvalidIndex);
 
-    const uint32_t k_maxDeviceExtensionProperties = 256;
-    kisArrayStatic<VkExtensionProperties, k_maxDeviceExtensionProperties> deviceExtensionProperties(kisArrayStaticInit::Fill);
-    vkEnumerateDeviceExtensionProperties(g_kisVkInfo.m_physicalDevice, nullptr, deviceExtensionProperties.numPointer(), deviceExtensionProperties.dataPointer());
+    g_kisVkInfo.m_physicalDeviceProperties = properties;
+
+    kisFixedArray<VkExtensionProperties, 256> deviceExtensionProperties;
+    vkEnumerateDeviceExtensionProperties(g_kisVkInfo.m_physicalDevice, nullptr, deviceExtensionProperties.numExternal(), deviceExtensionProperties.dataPointer());
     bool bSwapchainFound = false;
     const char* k_portabilitySubsetExtensioName = "VK_KHR_portability_subset";
  
@@ -505,8 +502,8 @@ void kisVkPickPhysicalDevice()
     }
     kisLogTableFooter();
 
-    kisArrayStatic<VkSurfaceFormatKHR, 64> surfaceFormats(kisArrayStaticInit::Fill);
-    g_vulkanFuncPtrGetPhysicalDeviceSurfaceFormatsKHR(g_kisVkInfo.m_physicalDevice, g_kisVkInfo.m_surface, surfaceFormats.numPointer(), surfaceFormats.dataPointer());
+    kisFixedArray<VkSurfaceFormatKHR, 64> surfaceFormats;
+    g_vulkanFuncPtrGetPhysicalDeviceSurfaceFormatsKHR(g_kisVkInfo.m_physicalDevice, g_kisVkInfo.m_surface, surfaceFormats.numExternal(), surfaceFormats.dataPointer());
 
     for(const VkSurfaceFormatKHR& surfaceFormat : surfaceFormats)
     {
@@ -597,10 +594,25 @@ void kisVkCreateDevice()
 
     KIS_VK_CHECK(vkAllocateCommandBuffers(g_kisVkInfo.m_device, &cmdBufferAllocInfo, &g_kisVkInfo.m_cmdBuffer));
 
+    // Create desciptor pool.
+    const VkDescriptorPoolSize uniformBuffersDescriptorPoolSize = {
+        .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .descriptorCount = k_kisVkMaxNumImages,
+    };
+
+    const VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .poolSizeCount = 1,
+        .pPoolSizes = &uniformBuffersDescriptorPoolSize,
+        .maxSets = k_kisVkMaxNumImages,
+    };
+
+    KIS_VK_CHECK(vkCreateDescriptorPool(g_kisVkInfo.m_device, &descriptorPoolCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_descriptorPool));
+
     const VkSemaphoreCreateInfo semaphoreCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
         .pNext = nullptr,
-        .flags = 0
+        .flags = 0,
     };
 
     vkCreateSemaphore(g_kisVkInfo.m_device, &semaphoreCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_imageAvailableSemaphore);
@@ -677,6 +689,32 @@ VkShaderModule kisVkCreateShader(const kisFileBuffer& spirVCode)
 //--------------------------------------------------------------------------
 void kisVKLoadAssets()
 {
+    const uint32_t uniformBufferSize = kisMin(g_kisVkInfo.m_physicalDeviceProperties.limits.maxUniformBufferRange, 64U * 1024U);
+    VkBufferCreateInfo uniformBufferCreateInfo = {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .flags = 0,
+        .size = uniformBufferSize,
+        .usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+    };
+
+    VmaAllocationCreateInfo uniformBufferAllocationInfo = {
+        .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT,
+        .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE
+    };
+
+    for(uint32_t i = 0 ; i < g_kisVkInfo.m_nImages; ++ i)
+    {
+        VkBuffer buffer;
+        VmaAllocation alloc;
+        VmaAllocationInfo allocInfo;
+        vmaCreateBuffer(g_kisVkInfo.m_vmaAllocator, &uniformBufferCreateInfo, &uniformBufferAllocationInfo, &buffer, &alloc, &allocInfo);
+        KIS_ASSERT(allocInfo.pMappedData != nullptr);
+        g_kisVkInfo.m_uniformBuffers[i] = buffer;
+        g_kisVkInfo.m_uniformBufferAllocs[i] = alloc;
+        g_kisVkInfo.m_uniformBufferMapped[i] = allocInfo.pMappedData;
+    }
+
     // load triangle
     kisFileBuffer vsBuffer = kisFileBufferCreate("data/triangle/triangle_vert.spv");
     VkShaderModule vsShader = kisVkCreateShader(vsBuffer);
@@ -700,7 +738,7 @@ void kisVKLoadAssets()
     const size_t vertexBufferSize = sizeof(vertices);
     const size_t indexBufferSize = sizeof(indices);
 
-    kisVkProp rectangle;
+    kisVkMesh rectangle;
     kisVkCreateVertexBuffer(vertices, vertexBufferSize, rectangle.m_vertexBuffer, rectangle.m_vertexBufferAlloc);
     kisVkCreateIndexBuffer(indices, indexBufferSize, rectangle.m_indexBuffer, rectangle.m_indexBufferAlloc);
     rectangle.m_nVertices = KIS_ARRAY_COUNT(vertices);
@@ -746,9 +784,9 @@ void kisVKLoadAssets()
         }
     };
 
-    kisArrayStatic<VkDynamicState, 2> dynamicStates;
-    dynamicStates.add(VK_DYNAMIC_STATE_VIEWPORT);
-    dynamicStates.add(VK_DYNAMIC_STATE_SCISSOR);
+    kisStaticArray<VkDynamicState, 2> dynamicStates;
+    dynamicStates[0] = VK_DYNAMIC_STATE_VIEWPORT;
+    dynamicStates[1] = VK_DYNAMIC_STATE_SCISSOR;
 
     const VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
@@ -787,7 +825,7 @@ void kisVKLoadAssets()
         .polygonMode = VK_POLYGON_MODE_FILL,
         .lineWidth = 1.0f,
         .cullMode = VK_CULL_MODE_BACK_BIT,
-        .frontFace = VK_FRONT_FACE_CLOCKWISE,
+        .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
         .depthBiasEnable = VK_FALSE,
         .depthBiasConstantFactor = 0.0f,
         .depthBiasClamp = 0.0f,
@@ -829,17 +867,39 @@ void kisVKLoadAssets()
         .blendConstants[3] = 0.0f,
     };
 
+    const VkDescriptorSetLayoutBinding objectDescriptorSetLayoutBindings[] = {
+        {
+            .binding = 0,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorCount = 1,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .pImmutableSamplers = nullptr
+        },
+    };
+
+    const VkDescriptorSetLayoutCreateInfo objectDescriptorSetLayoutCreateInfo = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .bindingCount = KIS_ARRAY_COUNT(objectDescriptorSetLayoutBindings),
+        .pBindings = objectDescriptorSetLayoutBindings,
+    };
+
+    VkDescriptorSetLayout objectDescriptorSetLayout;
+    KIS_VK_CHECK(vkCreateDescriptorSetLayout(g_kisVkInfo.m_device, &objectDescriptorSetLayoutCreateInfo, &g_kisVkAllocCallbacks, &objectDescriptorSetLayout));
+
+    const VkDescriptorSetLayout pipelineDescriptorSetLayouts[] = {
+        objectDescriptorSetLayout,
+    };
+
     const VkPipelineLayoutCreateInfo layoutCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
         .pNext = nullptr,
-        .setLayoutCount = 0,
-        .pSetLayouts = nullptr,
+        .setLayoutCount = KIS_ARRAY_COUNT(pipelineDescriptorSetLayouts),
+        .pSetLayouts = pipelineDescriptorSetLayouts,
         .pushConstantRangeCount = 0,
         .pPushConstantRanges = nullptr,
     };
 
-    VkPipelineLayout pipelineLayout;
-    KIS_VK_CHECK(vkCreatePipelineLayout(g_kisVkInfo.m_device, &layoutCreateInfo, &g_kisVkAllocCallbacks, &pipelineLayout));
+    KIS_VK_CHECK(vkCreatePipelineLayout(g_kisVkInfo.m_device, &layoutCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_pipelineLayout));
 
     VkGraphicsPipelineCreateInfo pipelineCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
@@ -854,7 +914,7 @@ void kisVKLoadAssets()
         .pDepthStencilState = nullptr,
         .pColorBlendState = &colorBlendStateCreateInfo,
         .pDynamicState = &dynamicStateCreateInfo,
-        .layout = pipelineLayout,
+        .layout = g_kisVkRenderContext.m_pipelineLayout,
         .renderPass = g_kisVkRenderContext.m_renderPass,
         .subpass = 0,
         .basePipelineHandle = VK_NULL_HANDLE,
@@ -862,6 +922,56 @@ void kisVKLoadAssets()
     };
 
     KIS_VK_CHECK(vkCreateGraphicsPipelines(g_kisVkInfo.m_device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_pipeline));
+
+    //
+    // Create individual objects.
+
+    // Duplicate the descriptor set layout for each image of the swapchain.
+    kisFixedArray<VkDescriptorSetLayout, k_kisVkMaxNumImages> descriptorSetLayoutPerImage;
+    for(uint32_t i = 0; i < g_kisVkInfo.m_nImages; i++)
+    {
+        descriptorSetLayoutPerImage.add(objectDescriptorSetLayout);
+    }
+
+    // Create descriptor sets.
+    const VkDescriptorSetAllocateInfo descriptorSetAllocInfo = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .descriptorPool = g_kisVkInfo.m_descriptorPool,
+        .descriptorSetCount = k_kisVkMaxNumImages,
+        .pSetLayouts = descriptorSetLayoutPerImage.dataPointer(),
+    };
+
+    kisStaticArray<VkDescriptorSet, k_kisVkMaxNumImages> descriptorSets;
+    KIS_VK_CHECK(vkAllocateDescriptorSets(g_kisVkInfo.m_device, &descriptorSetAllocInfo, descriptorSets.dataPointer()));
+
+    for(uint32_t iImage = 0; iImage < g_kisVkInfo.m_nImages; ++iImage)
+    {
+        kisVkObject& object = g_kisVkObjectsPerImage[iImage].add();
+        object.m_descriptorSet = descriptorSets[iImage];
+
+        const VkDescriptorBufferInfo descriptorBufferInfo = {
+            .buffer = g_kisVkInfo.m_uniformBuffers[iImage],
+            .offset = g_kisVkInfo.m_uniformBufferOffset,
+            .range = sizeof(kisVkUBOObjectVertexBuffer)
+        };
+
+        const VkWriteDescriptorSet writeDescriptorSet = {
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = descriptorSets[iImage],
+            .dstBinding = 0,
+            .dstArrayElement = 0,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorCount = 1,
+            .pBufferInfo = &descriptorBufferInfo,
+            .pImageInfo = nullptr,
+            .pTexelBufferView = nullptr,
+        };
+
+        vkUpdateDescriptorSets(g_kisVkInfo.m_device, 1, &writeDescriptorSet, 0, nullptr);
+    }
+
+    g_kisVkInfo.m_uniformBufferOffset += sizeof(kisVkUBOObjectVertexBuffer);
+    g_kisVkInfo.m_uniformBufferOffset = kisAlignPowerOf2(g_kisVkInfo.m_uniformBufferOffset, 16);
 }
 
 //--------------------------------------------------------------------------
@@ -948,12 +1058,14 @@ void kisVkPrepareResolutionSwapchain(uint32_t width, uint32_t height)
 
     KIS_VK_CHECK(vkCreateSwapchainKHR(g_kisVkInfo.m_device, &swapchainCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_swapchain));
 
+    g_kisVkInfo.m_nImages = nSwapchainImages;
+
     // Destroy old image views.
     for(int i = 0 ; i < g_kisVkInfo.m_swapchainImageViews.num(); ++i)
     {
         vkDestroyImageView(g_kisVkInfo.m_device, g_kisVkInfo.m_swapchainImageViews[i], &g_kisVkAllocCallbacks);
     }
-    g_kisVkInfo.m_swapchainImageViews.empty();
+    g_kisVkInfo.m_swapchainImageViews.clear();
     
     // Destroy old swapchain.
     if(oldSwapchain != VK_NULL_HANDLE)
@@ -962,8 +1074,7 @@ void kisVkPrepareResolutionSwapchain(uint32_t width, uint32_t height)
     }
 
     // Get swapchain images.
-    g_kisVkInfo.m_swapchainImages.fill();
-    KIS_VK_CHECK(vkGetSwapchainImagesKHR(g_kisVkInfo.m_device, g_kisVkInfo.m_swapchain, g_kisVkInfo.m_swapchainImages.numPointer(), g_kisVkInfo.m_swapchainImages.dataPointer()));
+    KIS_VK_CHECK(vkGetSwapchainImagesKHR(g_kisVkInfo.m_device, g_kisVkInfo.m_swapchain, g_kisVkInfo.m_swapchainImages.numExternal(), g_kisVkInfo.m_swapchainImages.dataPointer()));
 
     // Create image views.
     for(int i = 0 ; i < nSwapchainImages; ++i)
@@ -1075,7 +1186,7 @@ void kisVkDestroyFramebuffers()
         vkDestroyFramebuffer(g_kisVkInfo.m_device, frameBuffer, &g_kisVkAllocCallbacks);
     }
 
-    g_kisVkInfo.m_frameBuffers.empty();
+    g_kisVkInfo.m_frameBuffers.clear();
 }
 
 //--------------------------------------------------------------------------
@@ -1121,6 +1232,76 @@ void kisVkInit(const void* metalLayer)
 //--------------------------------------------------------------------------
 void kisVkShutdown()
 {
+    for(uint32_t i = 0; i < g_kisVkInfo.m_nImages; i++)
+    {
+        vkDestroyBuffer(g_kisVkInfo.m_device, g_kisVkInfo.m_uniformBuffers[i], &g_kisVkAllocCallbacks);
+    }
+
+    for(uint32_t i = 0; i < g_kisVkInfo.m_nImages; i++)
+    {
+        vmaFreeMemory(g_kisVkInfo.m_vmaAllocator, g_kisVkInfo.m_uniformBufferAllocs[i]);
+    }
+
+    for(VkSemaphore semaphore : g_kisVkInfo.m_imageAvailSemaphore)
+    {
+        vkDestroySemaphore(g_kisVkInfo.m_device, semaphore, &g_kisVkAllocCallbacks);
+    }
+
+    if(g_kisVkInfo.m_descriptorPool != VK_NULL_HANDLE)
+    {
+        vkDestroyDescriptorPool(g_kisVkInfo.m_device, g_kisVkInfo.m_descriptorPool, &g_kisVkAllocCallbacks);
+    }
+
+    if(g_kisVkInfo.m_cmdPool != VK_NULL_HANDLE)
+    {
+        vkDestroyCommandPool(g_kisVkInfo.m_device, g_kisVkInfo.m_cmdPool, &g_kisVkAllocCallbacks);
+    }
+
+    for(VkFramebuffer framebuffer : g_kisVkInfo.m_frameBuffers)
+    {
+        vkDestroyFramebuffer(g_kisVkInfo.m_device, framebuffer, &g_kisVkAllocCallbacks);
+    }
+
+    if(g_kisVkInfo.m_depthImageView != VK_NULL_HANDLE)
+    {
+        vkDestroyImageView(g_kisVkInfo.m_device, g_kisVkInfo.m_depthImageView, &g_kisVkAllocCallbacks);
+    }
+
+    if(g_kisVkInfo.m_depthImage != VK_NULL_HANDLE)
+    {
+        vkDestroyImage(g_kisVkInfo.m_device, g_kisVkInfo.m_depthImage, &g_kisVkAllocCallbacks);
+    }
+
+    if(g_kisVkInfo.m_depthAlloc)
+    {
+        vmaFreeMemory(g_kisVkInfo.m_vmaAllocator, g_kisVkInfo.m_depthAlloc);
+    }
+
+    for(VkImageView imageView : g_kisVkInfo.m_swapchainImageViews)
+    {
+        vkDestroyImageView(g_kisVkInfo.m_device, imageView, &g_kisVkAllocCallbacks);
+    }
+
+    if(g_kisVkInfo.m_swapchain != VK_NULL_HANDLE)
+    {
+        vkDestroySwapchainKHR(g_kisVkInfo.m_device, g_kisVkInfo.m_swapchain, &g_kisVkAllocCallbacks);
+    }
+
+    if(g_kisVkInfo.m_vmaAllocator)
+    {
+        vmaDestroyAllocator(g_kisVkInfo.m_vmaAllocator);
+    }
+
+    if(g_kisVkInfo.m_device != VK_NULL_HANDLE)
+    {
+        vkDestroyDevice(g_kisVkInfo.m_device, &g_kisVkAllocCallbacks);
+    }
+
+    if(g_kisVkInfo.m_surface != VK_NULL_HANDLE)
+    {
+        vkDestroySurfaceKHR(g_kisVkInfo.m_instance, g_kisVkInfo.m_surface, &g_kisVkAllocCallbacks);
+    }
+
     if(g_kisVkInfo.m_instance != VK_NULL_HANDLE)
     {
         vkDestroyInstance(g_kisVkInfo.m_instance, nullptr);
@@ -1149,6 +1330,22 @@ void kisVkRender()
 
     uint32_t iImage;
     vkAcquireNextImageKHR(g_kisVkInfo.m_device, g_kisVkInfo.m_swapchain, UINT64_MAX, g_kisVkRenderContext.m_imageAvailableSemaphore, VK_NULL_HANDLE, &iImage);
+
+    // Update UBOs.
+    kisVkUBOObjectVertexBuffer ubo;
+
+    static kisTime startTime = kisTimeNow();
+    const double elapsed = kisTimeDelta(startTime, kisTimeNow());
+    const float zRot = kisDegToRad((float)(90.0 * elapsed));
+
+    kisMat4 model = glm::rotate(kisMat4(1.0f), zRot, kisVec3(0.0f, 0.0f, 1.0f));
+    kisMat4 view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    kisMat4 projection = glm::perspective(kisDegToRad(45.0f), (float)g_kisVkInfo.m_swapchainSize.width / (float)g_kisVkInfo.m_swapchainSize.height, 0.1f, 10.0f);
+    projection[1][1] = -projection[1][1];
+
+    ubo.m_modelViewProj = projection * view * model;
+
+    memcpy(g_kisVkInfo.m_uniformBufferMapped[iImage], &ubo, sizeof(ubo));
 
     KIS_VK_CHECK(vkBeginCommandBuffer(g_kisVkInfo.m_cmdBuffer, &cmdBufferBeginInfo));
 
@@ -1183,7 +1380,9 @@ void kisVkRender()
     };
     vkCmdSetScissor(g_kisVkInfo.m_cmdBuffer, 0, 1, &scissor);
 
-    for(const kisVkProp& prop : g_kisVkProps)
+    vkCmdBindDescriptorSets(g_kisVkInfo.m_cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_kisVkRenderContext.m_pipelineLayout, 0, 1, &g_kisVkObjectsPerImage[iImage][0].m_descriptorSet, 0, nullptr);
+
+    for(const kisVkMesh& prop : g_kisVkProps)
     {
         VkBuffer vertexBuffers[] = {prop.m_vertexBuffer};
         VkDeviceSize offsets[] = {0};

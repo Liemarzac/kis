@@ -1,6 +1,9 @@
 #pragma once
 
-#include <kisCore/kisArrayStatic.h>
+#include <kisCore/kisArray.h>
+#include <kisCore/kisFixedArray.h>
+#include <kisCore/kisStaticArray.h>
+#include <kisCore/kisMath.h>
 
 #include <MoltenVK/mvk_vulkan.h>
 #pragma clang system_header
@@ -17,13 +20,17 @@
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
+const uint32_t k_kisVkMaxNumImages = 3;
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 struct kisVkInfo
 {
     VkInstance m_instance;
     VkPhysicalDevice m_physicalDevice;
-    VkDevice m_device;
-    VkPhysicalDeviceProperties m_deviceProperties;
+    VkPhysicalDeviceProperties m_physicalDeviceProperties;
     VkPhysicalDeviceMemoryProperties m_memoryProperties;
+    VkDevice m_device;
     VkSurfaceKHR m_surface;
     VkCommandPool m_cmdPool;
     VkSwapchainKHR m_swapchain;
@@ -37,21 +44,44 @@ struct kisVkInfo
     VkMemoryAllocateInfo m_depthMemAllocInfo;
     VkQueue m_graphicsQueue;
     VkQueue m_presentQueue;
+    VkDescriptorPool m_descriptorPool;
+    kisStaticArray<VkBuffer, k_kisVkMaxNumImages> m_uniformBuffers;
+    kisStaticArray<VmaAllocation, k_kisVkMaxNumImages> m_uniformBufferAllocs;
+    kisStaticArray<void*, k_kisVkMaxNumImages> m_uniformBufferMapped;
+    uint32_t m_uniformBufferOffset;
     VmaAllocator m_vmaAllocator;
     uint32_t m_iGraphicsQueueFamily;
     uint32_t m_iPresentQueueFamily;
+    uint32_t m_nImages;
     bool m_bValidate;
-    kisArrayStatic<const char*, 64> m_instanceExtensionNames;
-    kisArrayStatic<const char*, 64> m_deviceExtensionNames;
-    kisArrayStatic<const char*, 16> m_layerNames;
-    kisArrayStatic<VkImage, 3> m_swapchainImages;
-    kisArrayStatic<VkImageView, 3> m_swapchainImageViews;
-    kisArrayStatic<VkFramebuffer, 3> m_frameBuffers;
-    kisArrayStatic<VkSemaphore, 3> m_imageAvailSemaphore;
+    kisFixedArray<const char*, 64> m_instanceExtensionNames;
+    kisFixedArray<const char*, 64> m_deviceExtensionNames;
+    kisFixedArray<const char*, 16> m_layerNames;
+    kisFixedArray<VkImage, k_kisVkMaxNumImages> m_swapchainImages;
+    kisFixedArray<VkImageView, k_kisVkMaxNumImages> m_swapchainImageViews;
+    kisFixedArray<VkFramebuffer, k_kisVkMaxNumImages> m_frameBuffers;
+    kisFixedArray<VkSemaphore, k_kisVkMaxNumImages> m_imageAvailSemaphore;
+};
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+struct kisVkUBOObjectVertexBuffer
+{
+    kisMat4 m_modelViewProj;
+};
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+struct kisVkObject
+{
+    kisVkUBOObjectVertexBuffer m_UBOVertexBuffer;
+    VkDescriptorSet m_descriptorSet;
+    uint32_t uniformBufferOffset;
 };
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 extern kisVkInfo g_kisVkInfo;
 extern VkAllocationCallbacks g_kisVkAllocCallbacks;
+extern kisStaticArray<kisArray<kisVkObject>, k_kisVkMaxNumImages> g_kisVkObjectsPerImage;
 
