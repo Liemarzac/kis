@@ -12,5 +12,5 @@
 
 kisVkInfo g_kisVkInfo;
 VkAllocationCallbacks g_kisVkAllocCallbacks;
-
-kisStaticArray<kisArray<kisVkObject>, k_kisVkMaxNumImages> g_kisVkObjectsPerImage;
+kisStaticArray<kisVkFrame, k_kisVkMaxNumImages> g_kisVkFrames;
+kisFixedArray<kisVkMesh, 1024> g_kisVkMeshes;

@@ -36,7 +36,6 @@
 		7A452DE92AE5437C00700DCB /* kisVk.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A452DE82AE5437C00700DCB /* kisVk.cpp */; };
 		7A452DEC2AE8535600700DCB /* kisFile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A452DEB2AE8535600700DCB /* kisFile.cpp */; };
 		7A452DEF2AE854DC00700DCB /* kisMem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A452DEE2AE854DC00700DCB /* kisMem.cpp */; };
-		7A452DFD2AE8610E00700DCB /* kisFile-Swift.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A452DFC2AE8610E00700DCB /* kisFile-Swift.swift */; };
 		7A452DFF2AED285900700DCB /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A452DFE2AED285900700DCB /* Utilities.swift */; };
 		7A452E002AED285900700DCB /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A452DFE2AED285900700DCB /* Utilities.swift */; };
 		7A452E0B2AED443300700DCB /* data in Resources */ = {isa = PBXBuildFile; fileRef = 7A452E0A2AED443300700DCB /* data */; };
@@ -151,7 +150,6 @@
 		7A452DEB2AE8535600700DCB /* kisFile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = kisFile.cpp; path = src/private/kisFile.cpp; sourceTree = "<group>"; };
 		7A452DED2AE854C100700DCB /* kisMem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisMem.h; path = src/public/kisCore/kisMem.h; sourceTree = "<group>"; };
 		7A452DEE2AE854DC00700DCB /* kisMem.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = kisMem.cpp; path = src/private/kisMem.cpp; sourceTree = "<group>"; };
-		7A452DFC2AE8610E00700DCB /* kisFile-Swift.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "kisFile-Swift.swift"; sourceTree = "<group>"; };
 		7A452DFE2AED285900700DCB /* Utilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
 		7A452E0A2AED443300700DCB /* data */ = {isa = PBXFileReference; lastKnownFileType = folder; path = data; sourceTree = "<group>"; };
 		7A452E0D2AEE578100700DCB /* kisRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kisRenderer.swift; sourceTree = "<group>"; };
@@ -276,7 +274,6 @@
 				7A452DEB2AE8535600700DCB /* kisFile.cpp */,
 				7A452DED2AE854C100700DCB /* kisMem.h */,
 				7A452DEE2AE854DC00700DCB /* kisMem.cpp */,
-				7A452DFC2AE8610E00700DCB /* kisFile-Swift.swift */,
 				7A0B75F12AF04FFA00CD2584 /* kisMath.cpp */,
 				7A0B75F32AF0502100CD2584 /* kisMath.h */,
 				7A0B75FF2AFCCC2800CD2584 /* kisTime.h */,
@@ -530,7 +527,6 @@
 				7A452D9D2AE4007C00700DCB /* kisCore.cpp in Sources */,
 				7A452DEC2AE8535600700DCB /* kisFile.cpp in Sources */,
 				7A0B75F22AF04FFA00CD2584 /* kisMath.cpp in Sources */,
-				7A452DFD2AE8610E00700DCB /* kisFile-Swift.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

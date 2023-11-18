@@ -72,16 +72,37 @@ struct kisVkUBOObjectVertexBuffer
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-struct kisVkObject
+struct kisVkMesh
 {
-    kisVkUBOObjectVertexBuffer m_UBOVertexBuffer;
+    VkBuffer m_vertexBuffer;
+    VmaAllocation m_vertexBufferAlloc;
+    VkBuffer m_indexBuffer;
+    VmaAllocation m_indexBufferAlloc;
+    uint32_t m_nVertices;
+    uint32_t m_nIndices;
+    VkIndexType m_indexType;
+};
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+struct kisVkDraw
+{
     VkDescriptorSet m_descriptorSet;
-    uint32_t uniformBufferOffset;
+    uint32_t m_uniformBufferOffset;
+    uint32_t m_iMesh;
+};
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+struct kisVkFrame
+{
+    kisArray<kisVkDraw> m_draws;
 };
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 extern kisVkInfo g_kisVkInfo;
 extern VkAllocationCallbacks g_kisVkAllocCallbacks;
-extern kisStaticArray<kisArray<kisVkObject>, k_kisVkMaxNumImages> g_kisVkObjectsPerImage;
+extern kisStaticArray<kisVkFrame, k_kisVkMaxNumImages> g_kisVkFrames;
+extern kisFixedArray<kisVkMesh, 1024> g_kisVkMeshes;
 
