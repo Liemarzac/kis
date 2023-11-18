@@ -677,6 +677,7 @@ VkShaderModule kisVkCreateShader(const kisFileBuffer& spirVCode)
 //--------------------------------------------------------------------------
 void kisVKLoadAssets()
 {
+
     const uint32_t uniformBufferSize = kisMin(g_kisVkInfo.m_physicalDeviceProperties.limits.maxUniformBufferRange, 64U * 1024U);
     VkBufferCreateInfo uniformBufferCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -698,9 +699,11 @@ void kisVKLoadAssets()
         VmaAllocationInfo allocInfo;
         vmaCreateBuffer(g_kisVkInfo.m_vmaAllocator, &uniformBufferCreateInfo, &uniformBufferAllocationInfo, &buffer, &alloc, &allocInfo);
         KIS_ASSERT(allocInfo.pMappedData != nullptr);
-        g_kisVkInfo.m_uniformBuffers[i] = buffer;
-        g_kisVkInfo.m_uniformBufferAllocs[i] = alloc;
-        g_kisVkInfo.m_uniformBufferMapped[i] = allocInfo.pMappedData;
+        g_kisVkFrames[i].m_uniformBuffer = buffer;
+        g_kisVkFrames[i].m_uniformBufferAlloc = alloc;
+        g_kisVkFrames[i].m_uniformBufferMapped = allocInfo.pMappedData;
+        g_kisVkFrames[i].m_uniformBufferOffset = 0;
+        g_kisVkFrames[i].m_uniformBufferSize = uniformBufferSize;
     }
 
     // load triangle
@@ -951,8 +954,8 @@ void kisVKLoadAssets()
         draw.m_iMesh = 0;
 
         const VkDescriptorBufferInfo descriptorBufferInfo = {
-            .buffer = g_kisVkInfo.m_uniformBuffers[iImage],
-            .offset = g_kisVkInfo.m_uniformBufferOffset,
+            .buffer = g_kisVkFrames[iImage].m_uniformBuffer,
+            .offset = g_kisVkFrames[iImage].m_uniformBufferOffset,
             .range = sizeof(kisVkUBOObjectVertexBuffer)
         };
 
@@ -969,10 +972,10 @@ void kisVKLoadAssets()
         };
 
         vkUpdateDescriptorSets(g_kisVkInfo.m_device, 1, &writeDescriptorSet, 0, nullptr);
-    }
 
-    g_kisVkInfo.m_uniformBufferOffset += sizeof(kisVkUBOObjectVertexBuffer);
-    g_kisVkInfo.m_uniformBufferOffset = kisAlignPowerOf2(g_kisVkInfo.m_uniformBufferOffset, 16);
+        g_kisVkFrames[iImage].m_uniformBufferOffset += sizeof(kisVkUBOObjectVertexBuffer);
+        g_kisVkFrames[iImage].m_uniformBufferOffset = kisAlignPowerOf2(g_kisVkFrames[iImage].m_uniformBufferOffset, 16);
+    }
 }
 
 //--------------------------------------------------------------------------
@@ -1235,12 +1238,8 @@ void kisVkShutdown()
 {
     for(uint32_t i = 0; i < g_kisVkInfo.m_nImages; i++)
     {
-        vkDestroyBuffer(g_kisVkInfo.m_device, g_kisVkInfo.m_uniformBuffers[i], &g_kisVkAllocCallbacks);
-    }
-
-    for(uint32_t i = 0; i < g_kisVkInfo.m_nImages; i++)
-    {
-        vmaFreeMemory(g_kisVkInfo.m_vmaAllocator, g_kisVkInfo.m_uniformBufferAllocs[i]);
+        vkDestroyBuffer(g_kisVkInfo.m_device, g_kisVkFrames[i].m_uniformBuffer, &g_kisVkAllocCallbacks);
+        vmaFreeMemory(g_kisVkInfo.m_vmaAllocator, g_kisVkFrames[i].m_uniformBufferAlloc);
     }
 
     for(VkSemaphore semaphore : g_kisVkInfo.m_imageAvailSemaphore)
@@ -1346,7 +1345,7 @@ void kisVkRender()
 
     ubo.m_modelViewProj = projection * view * model;
 
-    memcpy(g_kisVkInfo.m_uniformBufferMapped[iImage], &ubo, sizeof(ubo));
+    memcpy(g_kisVkFrames[iImage].m_uniformBufferMapped, &ubo, sizeof(ubo));
 
     KIS_VK_CHECK(vkBeginCommandBuffer(g_kisVkInfo.m_cmdBuffer, &cmdBufferBeginInfo));
 

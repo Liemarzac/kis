@@ -45,10 +45,6 @@ struct kisVkInfo
     VkQueue m_graphicsQueue;
     VkQueue m_presentQueue;
     VkDescriptorPool m_descriptorPool;
-    kisStaticArray<VkBuffer, k_kisVkMaxNumImages> m_uniformBuffers;
-    kisStaticArray<VmaAllocation, k_kisVkMaxNumImages> m_uniformBufferAllocs;
-    kisStaticArray<void*, k_kisVkMaxNumImages> m_uniformBufferMapped;
-    uint32_t m_uniformBufferOffset;
     VmaAllocator m_vmaAllocator;
     uint32_t m_iGraphicsQueueFamily;
     uint32_t m_iPresentQueueFamily;
@@ -97,6 +93,11 @@ struct kisVkDraw
 struct kisVkFrame
 {
     kisArray<kisVkDraw> m_draws;
+    VkBuffer m_uniformBuffer;
+    VmaAllocation m_uniformBufferAlloc;
+    void* m_uniformBufferMapped;
+    uint32_t m_uniformBufferOffset;
+    uint32_t m_uniformBufferSize;
 };
 
 //--------------------------------------------------------------------------
