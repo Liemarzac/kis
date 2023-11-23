@@ -7,12 +7,12 @@
 
 import Cocoa
 import MetalKit
+import KisEngine
 
 // Our macOS specific view controller
 class GameViewController: NSViewController {
 
-    var renderer: Renderer!
-    var mtkView: MTKView!
+    var renderer: KisRenderer!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -28,17 +28,31 @@ class GameViewController: NSViewController {
             return
         }
 
-        mtkView.device = defaultDevice
+        renderer = KisRenderer()
 
-        guard let newRenderer = Renderer(metalKitView: mtkView) else {
-            print("Renderer cannot be initialized")
+        mtkView.device = defaultDevice
+        mtkView.delegate = renderer
+
+        let engineParams = UnsafeMutablePointer<kisEngineInitParams>.allocate(capacity: 1)
+
+        guard let layer = mtkView.layer else {
+            print("No metal layer")
             return
         }
 
-        renderer = newRenderer
+        engineParams.pointee.m_metalLayer = UnsafeRawPointer(Unmanaged.passUnretained(layer).toOpaque())
 
-        renderer.mtkView(mtkView, drawableSizeWillChange: mtkView.drawableSize)
+        var dataPath : String
+        if let resourcePath = Bundle.main.resourcePath {
+            dataPath = resourcePath
+        }
+        else {
+            dataPath = Bundle.main.bundlePath
+        }
 
-        mtkView.delegate = renderer
+        copyStringToCCharArray(swiftString: dataPath, charArray: &engineParams.pointee.m_dataPath)
+
+        kisEngineInit(engineParams)
+        engineParams.deallocate()
     }
 }

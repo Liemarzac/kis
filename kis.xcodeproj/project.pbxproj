@@ -42,6 +42,7 @@
 		7A452E0C2AED443300700DCB /* data in Resources */ = {isa = PBXBuildFile; fileRef = 7A452E0A2AED443300700DCB /* data */; };
 		7A452E0E2AEE578100700DCB /* kisRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A452E0D2AEE578100700DCB /* kisRenderer.swift */; };
 		7A452E0F2AEE578200700DCB /* kisRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A452E0D2AEE578100700DCB /* kisRenderer.swift */; };
+		7AB361662B0FE3CE00DA31E4 /* libkisEngine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A452DC22AE42AA600700DCB /* libkisEngine.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -67,6 +68,13 @@
 			remoteInfo = kisGraphics;
 		};
 		7A452DD42AE430D900700DCB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7A452D582AE4000000700DCB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7A452DC12AE42AA600700DCB;
+			remoteInfo = kisEngine;
+		};
+		7AB361672B0FEA1A00DA31E4 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 7A452D582AE4000000700DCB /* Project object */;
 			proxyType = 1;
@@ -168,6 +176,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7AB361662B0FE3CE00DA31E4 /* libkisEngine.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -355,6 +364,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				7AB361682B0FEA1A00DA31E4 /* PBXTargetDependency */,
 			);
 			name = "kis macOS";
 			productName = "kis macOS";
@@ -572,6 +582,11 @@
 			target = 7A452DC12AE42AA600700DCB /* kisEngine */;
 			targetProxy = 7A452DD42AE430D900700DCB /* PBXContainerItemProxy */;
 		};
+		7AB361682B0FEA1A00DA31E4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7A452DC12AE42AA600700DCB /* kisEngine */;
+			targetProxy = 7AB361672B0FEA1A00DA31E4 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
@@ -652,7 +667,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = "";
+				HEADER_SEARCH_PATHS = kisEngine/src/public;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -705,7 +720,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = "";
+				HEADER_SEARCH_PATHS = kisEngine/src/public;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -723,7 +738,6 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7LMD5965ZQ;
 				GENERATE_INFOPLIST_FILE = YES;
-				HEADER_SEARCH_PATHS = kisEngine/src/public;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -760,7 +774,6 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7LMD5965ZQ;
 				GENERATE_INFOPLIST_FILE = YES;
-				HEADER_SEARCH_PATHS = kisEngine/src/public;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -809,6 +822,10 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-lc++",
+					"external/MoltenVK/MoltenVK.xcframework/macOS-arm64_x86_64/libMoltenVK.a",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.hi.kis.kis;
 				PRODUCT_NAME = kis;
 				SDKROOT = macosx;
@@ -839,6 +856,10 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-lc++",
+					"external/MoltenVK/MoltenVK.xcframework/macOS-arm64_x86_64/libMoltenVK.a",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.hi.kis.kis;
 				PRODUCT_NAME = kis;
 				SDKROOT = macosx;
@@ -861,7 +882,6 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -882,7 +902,6 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -906,7 +925,6 @@
 				OTHER_LDFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PUBLIC_HEADERS_FOLDER_PATH = /usr/local/include;
-				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -929,7 +947,6 @@
 				OTHER_LDFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PUBLIC_HEADERS_FOLDER_PATH = /usr/local/include;
-				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -949,7 +966,6 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -968,7 +984,6 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

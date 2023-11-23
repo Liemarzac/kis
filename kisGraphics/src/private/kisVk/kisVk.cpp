@@ -125,6 +125,11 @@ void* kisVkRealloc(
 //--------------------------------------------------------------------------
 void kisVkFree(void* pUserData, void* pointer)
 {
+    if(pointer == nullptr)
+    {
+        return;
+    }
+
     for(uint32_t i = 0; i < g_vulkanMemBlocks.num(); ++i)
     {
         if(g_vulkanMemBlocks[i].m_pointer == pointer)

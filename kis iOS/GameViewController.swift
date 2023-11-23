@@ -38,7 +38,15 @@ class GameViewController: UIViewController {
         let engineParams = UnsafeMutablePointer<kisEngineInitParams>.allocate(capacity: 1)
         engineParams.pointee.m_metalLayer = UnsafeRawPointer(Unmanaged.passUnretained(mtkView.layer).toOpaque())
 
-        copyStringToCCharArray(swiftString: Bundle.main.bundlePath, charArray: &engineParams.pointee.m_dataPath)
+        var dataPath : String
+        if let resourcePath = Bundle.main.resourcePath {
+            dataPath = resourcePath
+        }
+        else {
+            dataPath = Bundle.main.bundlePath
+        }
+
+        copyStringToCCharArray(swiftString: dataPath, charArray: &engineParams.pointee.m_dataPath)
 
         kisEngineInit(engineParams)
         engineParams.deallocate()
