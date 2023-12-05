@@ -10,7 +10,7 @@ void kisGraphicsInit(const void* metalLayer)
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void kisGaphicsShutdown()
+void kisGraphicsShutdown()
 {
     kisVkShutdown();
 }

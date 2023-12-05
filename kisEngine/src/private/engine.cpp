@@ -18,7 +18,7 @@ void kisEngineInit(const kisEngineInitParams* params)
 //--------------------------------------------------------------------------
 void kisEngineShutdown()
 {
-    kisGaphicsShutdown();
+    kisGraphicsShutdown();
 }
 
 //--------------------------------------------------------------------------

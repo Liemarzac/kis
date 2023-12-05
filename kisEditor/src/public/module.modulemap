@@ -1,0 +1,5 @@
+module KisEditor {
+    header "kisEditor/kisEditor.h"
+
+    export *
+}
