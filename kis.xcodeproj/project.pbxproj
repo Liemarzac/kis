@@ -42,6 +42,7 @@
 		7A452E0F2AEE578200700DCB /* kisRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A452E0D2AEE578100700DCB /* kisRenderer.swift */; };
 		7A45BEAD2B193CB1008C0242 /* kisEditorRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A45BEAC2B193CB1008C0242 /* kisEditorRenderer.swift */; };
 		7A45BEAE2B193D6F008C0242 /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A452DFE2AED285900700DCB /* Utilities.swift */; };
+		7A45BEBA2B25D29F008C0242 /* kisBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A45BEB92B25D29F008C0242 /* kisBuffer.cpp */; };
 		7AB361662B0FE3CE00DA31E4 /* libkisEngine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A452DC22AE42AA600700DCB /* libkisEngine.a */; };
 		7AB361732B126DCE00DA31E4 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A452D782AE4000200700DCB /* AppDelegate.swift */; };
 		7AB361792B126DCE00DA31E4 /* data in Resources */ = {isa = PBXBuildFile; fileRef = 7A452E0A2AED443300700DCB /* data */; };
@@ -199,6 +200,10 @@
 		7A452E0A2AED443300700DCB /* data */ = {isa = PBXFileReference; lastKnownFileType = folder; path = data; sourceTree = "<group>"; };
 		7A452E0D2AEE578100700DCB /* kisRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kisRenderer.swift; sourceTree = "<group>"; };
 		7A45BEAC2B193CB1008C0242 /* kisEditorRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = kisEditorRenderer.swift; path = "kis Editor macOS/kisEditorRenderer.swift"; sourceTree = SOURCE_ROOT; };
+		7A45BEB72B25CC15008C0242 /* kisGraphicsShared.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisGraphicsShared.h; path = src/public/kisGraphics/kisGraphicsShared.h; sourceTree = "<group>"; };
+		7A45BEB82B25D287008C0242 /* kisBuffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisBuffer.h; path = src/public/kisCore/kisBuffer.h; sourceTree = "<group>"; };
+		7A45BEB92B25D29F008C0242 /* kisBuffer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = kisBuffer.cpp; path = src/private/kisBuffer.cpp; sourceTree = "<group>"; };
+		7A45BEBB2B25E520008C0242 /* kisCoreShared.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisCoreShared.h; path = src/public/kisCore/kisCoreShared.h; sourceTree = "<group>"; };
 		7AB3617E2B126DCE00DA31E4 /* kis Editor macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "kis Editor macOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		7AB361942B12742100DA31E4 /* Main.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Main.storyboard; sourceTree = "<group>"; };
 		7AB361962B12744800DA31E4 /* EditorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorViewController.swift; sourceTree = "<group>"; };
@@ -352,6 +357,9 @@
 				7A0B75F32AF0502100CD2584 /* kisMath.h */,
 				7A0B75FF2AFCCC2800CD2584 /* kisTime.h */,
 				7A0B76002AFCCC4B00CD2584 /* kisTime.cpp */,
+				7A45BEB82B25D287008C0242 /* kisBuffer.h */,
+				7A45BEB92B25D29F008C0242 /* kisBuffer.cpp */,
+				7A45BEBB2B25E520008C0242 /* kisCoreShared.h */,
 			);
 			path = kisCore;
 			sourceTree = "<group>";
@@ -363,6 +371,7 @@
 				7A452DE22AE542BF00700DCB /* kisGraphics.h */,
 				7A452DDF2AE542AC00700DCB /* kisGraphics.cpp */,
 				7A452DE02AE542AC00700DCB /* kisGraphicsPrivate.h */,
+				7A45BEB72B25CC15008C0242 /* kisGraphicsShared.h */,
 			);
 			path = kisGraphics;
 			sourceTree = "<group>";
@@ -666,6 +675,7 @@
 				7A0B76012AFCCC4B00CD2584 /* kisTime.cpp in Sources */,
 				7A452DEF2AE854DC00700DCB /* kisMem.cpp in Sources */,
 				7A452D9D2AE4007C00700DCB /* kisCore.cpp in Sources */,
+				7A45BEBA2B25D29F008C0242 /* kisBuffer.cpp in Sources */,
 				7A452DEC2AE8535600700DCB /* kisFile.cpp in Sources */,
 				7A0B75F22AF04FFA00CD2584 /* kisMath.cpp in Sources */,
 			);

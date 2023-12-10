@@ -1,4 +1,5 @@
 #include "kisGraphics.h"
+#include "kisGraphicsShared.h"
 #include "kisVk/kisVk.h"
 
 //--------------------------------------------------------------------------

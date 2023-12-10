@@ -720,28 +720,28 @@ void kisVKLoadAssets()
     VkShaderModule psShader = kisVkCreateShader(psBuffer);
     kisFileBufferDestroy(psBuffer);
 
-//    // Rectangle
-//    kisVertexFormatPos2Color3 vertices[] = {
-//        { {-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f} },
-//        { { 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f} },
-//        { { 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f} },
-//        { {-0.5f,  0.5f}, {1.0f, 1.0f, 1.0f} }
-//    };
-//
-//    uint16_t indices[] = {
-//        0, 1, 2, 2, 3, 0
-//    };
-
-    // Triangle
+    // Rectangle
     kisVertexFormatPos2Color3 vertices[] = {
-        { { 0.0f, -0.5f}, {1.0f, 0.0f, 0.0f} },
-        { { 0.5f,  0.5f}, {0.0f, 1.0f, 0.0f} },
-        { {-0.5f,  0.5f}, {0.0f, 0.0f, 1.0f} },
+        { {-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f} },
+        { { 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f} },
+        { { 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f} },
+        { {-0.5f,  0.5f}, {1.0f, 1.0f, 1.0f} }
     };
 
     uint16_t indices[] = {
-        0, 1, 2
+        0, 1, 2, 2, 3, 0
     };
+
+    // Triangle
+//    kisVertexFormatPos2Color3 vertices[] = {
+//        { { 0.0f, -0.5f}, {1.0f, 0.0f, 0.0f} },
+//        { { 0.5f,  0.5f}, {0.0f, 1.0f, 0.0f} },
+//        { {-0.5f,  0.5f}, {0.0f, 0.0f, 1.0f} },
+//    };
+//
+//    uint16_t indices[] = {
+//        0, 1, 2
+//    };
 
     const size_t vertexBufferSize = sizeof(vertices);
     const size_t indexBufferSize = sizeof(indices);

@@ -39,7 +39,7 @@ public:
 
         va_end(args);
     }
-    
+
     const char* c_str() const
     {
         return m_buffer;

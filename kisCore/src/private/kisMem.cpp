@@ -4,14 +4,15 @@
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void* kisMemAlloc(size_t size)
+void* kisMemAlloc(size_t size, uint32_t alignment)
 {
-    return malloc(size);
+    size_t alignedSize = kisAlignPowerOf2(size, alignment);
+    return std::aligned_alloc(alignment, alignedSize);
 }
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 void kisMemFree(void* p)
 {
-    free(p);
+    std::free(p);
 }

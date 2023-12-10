@@ -1,5 +1,7 @@
 #pragma once
 
+#include "kisGraphicsShared.h"
+
 #include <kisCore/kisCore.h>
 
 //--------------------------------------------------------------------------
