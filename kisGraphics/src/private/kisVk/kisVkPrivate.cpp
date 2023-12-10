@@ -14,3 +14,23 @@ kisVkInfo g_kisVkInfo;
 VkAllocationCallbacks g_kisVkAllocCallbacks;
 kisStaticArray<kisVkFrame, k_kisVkMaxNumImages> g_kisVkFrames;
 kisFixedArray<kisVkMesh, 1024> g_kisVkMeshes;
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+VkIndexType kisVkIndexType(kisIndexBufferType type)
+{
+    switch (type)
+    {
+        case kisIndexBufferType::U16:
+            return VK_INDEX_TYPE_UINT16;
+
+        case kisIndexBufferType::U32:
+            return VK_INDEX_TYPE_UINT32;
+
+        default:
+            KIS_ASSERT(false);
+            break;
+    }
+    
+    return VK_INDEX_TYPE_UINT32;
+}

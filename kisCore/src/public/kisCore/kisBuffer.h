@@ -12,8 +12,11 @@ public:
     kisBuffer(size_t size, uint32_t alignment = 16);
     ~kisBuffer();
 
-    // Get the position of the current pointer in the buffer.
-    uint8_t* ptr() const;
+    // Get a pointer to the start of the buffer.
+    void* getStart() const;
+
+    // Get a pointer to the current offset in the buffer.
+    void* getOffset() const;
 
     // Offset the current pointer of size bytes.
     void commit(size_t size);

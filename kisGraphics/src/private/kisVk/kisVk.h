@@ -15,7 +15,7 @@ void kisVkRender();
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void kisVkCreateMesh(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent* vertices, uint32_t nVertices, void* indices, uint32_t indexSize, uint32_t nIndices);
+void kisVkCreateMesh(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent* vertices, uint32_t nVertices, void* indices, uint32_t nIndices, kisIndexBufferType indexType);
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------

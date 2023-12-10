@@ -711,6 +711,20 @@ void kisVKLoadAssets()
         g_kisVkFrames[i].m_uniformBufferSize = uniformBufferSize;
     }
 
+//    // Rectangle
+//    kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent vertices_hardcoded[] = {
+//        { {-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
+//        { { 0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
+//        { { 0.5f,  0.5f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
+//        { {-0.5f,  0.5f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}}
+//    };
+//
+//    uint16_t indices_hardcoded[] = {
+//        0, 1, 2, 0, 2, 3
+//    };
+//
+//    kisVkCreateMesh(vertices_hardcoded, KIS_ARRAY_COUNT(vertices_hardcoded), indices_hardcoded, KIS_ARRAY_COUNT(indices_hardcoded), kisIndexBufferType::U16);
+
     // load triangle
     kisFileBuffer vsBuffer = kisFileBufferCreate("data/triangle/triangle_vert.spv");
     VkShaderModule vsShader = kisVkCreateShader(vsBuffer);
@@ -719,40 +733,6 @@ void kisVKLoadAssets()
     kisFileBuffer psBuffer = kisFileBufferCreate("data/triangle/triangle_frag.spv");
     VkShaderModule psShader = kisVkCreateShader(psBuffer);
     kisFileBufferDestroy(psBuffer);
-
-    // Rectangle
-    kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent vertices[] = {
-        { {-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
-        { { 0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
-        { { 0.5f,  0.5f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
-        { {-0.5f,  0.5f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}}
-    };
-
-    uint16_t indices[] = {
-        0, 1, 2, 0, 2, 3
-    };
-
-    // Triangle
-//    kisVertexFormatPos2Color3 vertices[] = {
-//        { { 0.0f, -0.5f}, {1.0f, 0.0f, 0.0f} },
-//        { { 0.5f,  0.5f}, {0.0f, 1.0f, 0.0f} },
-//        { {-0.5f,  0.5f}, {0.0f, 0.0f, 1.0f} },
-//    };
-//
-//    uint16_t indices[] = {
-//        0, 1, 2
-//    };
-
-    const size_t vertexBufferSize = sizeof(vertices);
-    const size_t indexBufferSize = sizeof(indices);
-
-    kisVkMesh rectangle;
-    kisVkCreateVertexBuffer(vertices, vertexBufferSize, rectangle.m_vertexBuffer, rectangle.m_vertexBufferAlloc);
-    kisVkCreateIndexBuffer(indices, indexBufferSize, rectangle.m_indexBuffer, rectangle.m_indexBufferAlloc);
-    rectangle.m_nVertices = KIS_ARRAY_COUNT(vertices);
-    rectangle.m_nIndices = KIS_ARRAY_COUNT(indices);
-    rectangle.m_indexType = sizeof(indices[0]) == sizeof(uint16_t) ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
-    g_kisVkMeshes.add(rectangle);
 
     const VkVertexInputBindingDescription vertexInputBindingDescription = {
         .binding = 0,
@@ -1473,7 +1453,16 @@ void kisVkResize(uint32_t width, uint32_t height)
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void kisVkCreateMesh(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent* vertices, uint32_t nVertices, void* indices, uint32_t indexSize, uint32_t nIndices)
+void kisVkCreateMesh(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent* vertices, uint32_t nVertices, void* indices, uint32_t nIndices, kisIndexBufferType indexBufferType)
 {
-    
+    const size_t vertexBufferSize = sizeof(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent) * nVertices;
+    const size_t indexBufferSize = nIndices * (indexBufferType == kisIndexBufferType::U16 ? sizeof(uint16_t) : sizeof(uint32_t));
+
+    kisVkMesh& mesh = g_kisVkMeshes.add();
+    kisVkCreateVertexBuffer(vertices, vertexBufferSize, mesh.m_vertexBuffer, mesh.m_vertexBufferAlloc);
+    kisVkCreateIndexBuffer(indices, indexBufferSize, mesh.m_indexBuffer, mesh.m_indexBufferAlloc);
+    mesh.m_nVertices = nVertices;
+    mesh.m_nIndices = nIndices;
+    mesh.m_indexType = kisVkIndexType(indexBufferType);
+    g_kisVkMeshes.add(mesh);
 }

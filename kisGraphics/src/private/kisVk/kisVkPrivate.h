@@ -1,5 +1,7 @@
 #pragma once
 
+#include "kisGraphicsShared.h"
+
 #include <kisCore/kisArray.h>
 #include <kisCore/kisFixedArray.h>
 #include <kisCore/kisStaticArray.h>
@@ -107,3 +109,6 @@ extern VkAllocationCallbacks g_kisVkAllocCallbacks;
 extern kisStaticArray<kisVkFrame, k_kisVkMaxNumImages> g_kisVkFrames;
 extern kisFixedArray<kisVkMesh, 1024> g_kisVkMeshes;
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+VkIndexType kisVkIndexType(kisIndexBufferType type);

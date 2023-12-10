@@ -9,3 +9,9 @@ struct kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent
     float m_tangent[3];
     float m_bitangent[3];
 };
+
+enum class kisIndexBufferType
+{
+    U16,
+    U32
+};
