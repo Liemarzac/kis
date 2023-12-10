@@ -721,15 +721,15 @@ void kisVKLoadAssets()
     kisFileBufferDestroy(psBuffer);
 
     // Rectangle
-    kisVertexFormatPos2Color3 vertices[] = {
-        { {-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f} },
-        { { 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f} },
-        { { 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f} },
-        { {-0.5f,  0.5f}, {1.0f, 1.0f, 1.0f} }
+    kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent vertices[] = {
+        { {-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
+        { { 0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
+        { { 0.5f,  0.5f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
+        { {-0.5f,  0.5f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}}
     };
 
     uint16_t indices[] = {
-        0, 1, 2, 2, 3, 0
+        0, 1, 2, 0, 2, 3
     };
 
     // Triangle
@@ -756,7 +756,7 @@ void kisVKLoadAssets()
 
     const VkVertexInputBindingDescription vertexInputBindingDescription = {
         .binding = 0,
-        .stride = sizeof(kisVertexFormatPos2Color3),
+        .stride = sizeof(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent),
         .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
     };
 
@@ -764,15 +764,39 @@ void kisVKLoadAssets()
         {
             .binding = 0,
             .location = 0,
-            .format = VK_FORMAT_R32G32_SFLOAT,
-            .offset = offsetof(kisVertexFormatPos2Color3, m_pos)
+            .format = VK_FORMAT_R32G32B32_SFLOAT,
+            .offset = offsetof(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent, m_position)
         },
         {
            .binding = 0,
            .location = 1,
-           .format = VK_FORMAT_R32G32B32_SFLOAT,
-           .offset = offsetof(kisVertexFormatPos2Color3, m_color)
+           .format = VK_FORMAT_R32G32_SFLOAT,
+           .offset = offsetof(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent, m_uv)
         },
+        {
+           .binding = 0,
+           .location = 2,
+           .format = VK_FORMAT_R32G32B32_SFLOAT,
+           .offset = offsetof(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent, m_color)
+        },
+        {
+           .binding = 0,
+           .location = 3,
+           .format = VK_FORMAT_R32G32B32_SFLOAT,
+           .offset = offsetof(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent, m_normal)
+        },
+        {
+           .binding = 0,
+           .location = 4,
+           .format = VK_FORMAT_R32G32B32_SFLOAT,
+           .offset = offsetof(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent, m_tangent)
+        },
+        {
+           .binding = 0,
+           .location = 5,
+           .format = VK_FORMAT_R32G32B32_SFLOAT,
+           .offset = offsetof(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent, m_bitangent)
+        }
     };
 
     const VkPipelineShaderStageCreateInfo shaderStages[] = {
@@ -808,7 +832,7 @@ void kisVKLoadAssets()
         .pNext = nullptr,
         .vertexBindingDescriptionCount = 1,
         .pVertexBindingDescriptions = &vertexInputBindingDescription,
-        .vertexAttributeDescriptionCount = 2,
+        .vertexAttributeDescriptionCount = KIS_ARRAY_COUNT(vertexInputAttributeDescription),
         .pVertexAttributeDescriptions = vertexInputAttributeDescription,
     };
 
@@ -1341,10 +1365,11 @@ void kisVkRender()
 
     static kisTime startTime = kisTimeNow();
     const double elapsed = kisTimeDelta(startTime, kisTimeNow());
-    const float zRot = kisDegToRad((float)(90.0 * elapsed));
+    //const float zRot = kisDegToRad((float)(90.0 * elapsed));
+    const float zRot = 0.0;
 
     kisMat4 model = glm::rotate(kisMat4(1.0f), zRot, kisVec3(0.0f, 0.0f, 1.0f));
-    kisMat4 view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    kisMat4 view = glm::lookAt(glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     kisMat4 projection = glm::perspective(kisDegToRad(45.0f), (float)g_kisVkInfo.m_swapchainSize.width / (float)g_kisVkInfo.m_swapchainSize.height, 0.1f, 10.0f);
     projection[1][1] = -projection[1][1];
 
@@ -1444,4 +1469,11 @@ void kisVkRender()
 void kisVkResize(uint32_t width, uint32_t height)
 {
     kisVkPrepareResolution(width, height);
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisVkCreateMesh(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent* vertices, uint32_t nVertices, void* indices, uint32_t indexSize, uint32_t nIndices)
+{
+    
 }

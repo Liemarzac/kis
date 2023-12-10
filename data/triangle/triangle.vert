@@ -7,20 +7,18 @@ layout(set = 0, binding = 0) uniform ObjectUBO
 } objectUBO;
 
 // Vertex input
-layout(location = 0) in vec2 inPosition;
-layout(location = 1) in vec3 inColor;
+layout(location = 0) in vec3 inPosition;
+layout(location = 1) in vec2 inUV;
+layout(location = 2) in vec3 inColor;
+layout(location = 3) in vec3 inNormal;
+layout(location = 4) in vec3 inTangent;
+layout(location = 5) in vec3 inBitangent;
 
 // Vertex output
 layout(location = 0) out vec3 fragColor;
 
-//mat4 g_identity = mat4(1.0f, 0.0f, 0.0f, 0.0f,
-//                       0.0f, 1.0f, 0.0f, 0.0f,
-//                       0.0f, 0.0f, 1.0f, 0.0f,
-//                       0.0f, 0.0f, 0.0f, 1.0f);
-
 void main()
 {
-    gl_Position = objectUBO.m_modelViewProj * vec4(inPosition, 0.0, 1.0);
-    //gl_Position = vec4(inPosition, 0.0, 1.0);
+    gl_Position = objectUBO.m_modelViewProj * vec4(inPosition, 1.0);
     fragColor = inColor;
 }

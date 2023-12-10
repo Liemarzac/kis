@@ -177,7 +177,7 @@ void kisEditorInit(const kisEditorInitParams* params)
     kisGraphicsInit(params->m_metalLayer);
 
     kisStringANSIStatic<k_kisCoreMaxPathSize> fullyQualifiedPath;
-    fullyQualifiedPath.concat("%s/%s", kisFileDataPath(), "data/editor/male_character_bow.fbx");
+    fullyQualifiedPath.concat("%s/%s", kisFileDataPath(), "data/editor/plane.fbx");
 
     kisEditorLoadScene(fullyQualifiedPath.c_str());
 }
