@@ -65,7 +65,7 @@ struct kisVkInfo
 //--------------------------------------------------------------------------
 struct kisVkUBOObjectVertexBuffer
 {
-    kisMat4 m_modelViewProj;
+    kisMatrix4 m_modelViewProj;
 };
 
 //--------------------------------------------------------------------------
@@ -95,6 +95,7 @@ struct kisVkDraw
 struct kisVkFrame
 {
     kisArray<kisVkDraw> m_draws;
+    kisArray<VkDescriptorSet> m_descriptorSets;
     VkBuffer m_uniformBuffer;
     VmaAllocation m_uniformBufferAlloc;
     void* m_uniformBufferMapped;

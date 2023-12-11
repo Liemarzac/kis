@@ -31,6 +31,6 @@ VkIndexType kisVkIndexType(kisIndexBufferType type)
             KIS_ASSERT(false);
             break;
     }
-    
+
     return VK_INDEX_TYPE_UINT32;
 }

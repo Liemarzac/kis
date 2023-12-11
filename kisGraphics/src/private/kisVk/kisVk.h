@@ -2,6 +2,7 @@
 
 #include <kisCore/kisCore.h>
 
+#include "kisGraphicsPrivate.h"
 #include "kisGraphicsShared.h"
 
 //--------------------------------------------------------------------------
@@ -11,11 +12,11 @@ void kisVkShutdown();
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void kisVkRender();
+void kisVkRender(const kisRenderParams& renderParams);
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void kisVkCreateMesh(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent* vertices, uint32_t nVertices, void* indices, uint32_t nIndices, kisIndexBufferType indexType);
+uint32_t kisVkCreateMesh(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent* vertices, uint32_t nVertices, void* indices, uint32_t nIndices, kisIndexBufferType indexType);
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------

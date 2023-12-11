@@ -14,7 +14,7 @@ typedef glm::vec2 kisVec2;
 typedef glm::vec3 kisVec3;
 typedef glm::mat2x2 kisMatrix2;
 typedef glm::mat2x2 kisMatrix3;
-typedef glm::mat4x4 kisMat4;
+typedef glm::mat4x4 kisMatrix4;
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
@@ -33,4 +33,3 @@ T kisRadToDeg(T rad)
 {
     return (T)(rad * (180.0 / k_kisPI));
 }
-

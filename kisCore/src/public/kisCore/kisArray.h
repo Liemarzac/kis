@@ -85,6 +85,7 @@ public:
 
     ~kisArray()
     {
+        empty();
         kisMemFree(m_elements);
     }
 
@@ -100,6 +101,16 @@ public:
         fit(m_nElements + 1);
         m_nElements++;
         return m_elements[m_nElements - 1];
+    }
+
+    void empty()
+    {
+        for(int i = 0; i < m_nElements; i++)
+        {
+            m_elements[i].~T();
+        }
+
+        m_nElements = 0;
     }
 
     void removeUnordered(uint32_t index)

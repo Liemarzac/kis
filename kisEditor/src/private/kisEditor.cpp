@@ -162,7 +162,8 @@ void kisEditorLoadScene(const char* path)
             }
         }
 
-        kisGraphicsCreateMesh(vertexBuffer.dataPointer(), vertexBuffer.num(), indexBufer.getStart(), mesh->mNumFaces * 3, sizeofIndex == sizeof(uint16_t) ? kisIndexBufferType::U16 : kisIndexBufferType::U32);
+        uint32_t iKisMesh = kisGraphicsCreateMesh(vertexBuffer.dataPointer(), vertexBuffer.num(), indexBufer.getStart(), mesh->mNumFaces * 3, sizeofIndex == sizeof(uint16_t) ? kisIndexBufferType::U16 : kisIndexBufferType::U32);
+        kisGraphicsCreateInstance(iKisMesh);
     }
 
     aiReleaseImport(scene);

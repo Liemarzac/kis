@@ -81,6 +81,11 @@ public:
 
     //--------------------------------------------------------------------------
     //--------------------------------------------------------------------------
+    ~kisFixedArray()
+    {
+        empty();
+    }
+
     void add(const T& elem)
     {
         KIS_ASSERT(m_nElements < MaxCount);
@@ -111,7 +116,7 @@ public:
         m_nElements--;
     }
 
-    void clear()
+    void empty()
     {
         for(uint32_t i = 0; i < m_nElements; ++i)
         {

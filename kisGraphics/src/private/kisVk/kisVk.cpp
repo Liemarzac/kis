@@ -35,6 +35,7 @@ struct kisVkRenderContext
     VkRenderPass m_renderPass;
     VkPipeline m_pipeline;
     VkPipelineLayout m_pipelineLayout;
+    VkDescriptorSetLayout m_objectDescriptorSetLayout;
     VkSemaphore m_imageAvailableSemaphore;
     VkSemaphore m_queueExecutedSemaphore;
     VkFence m_queueExecutedFence;
@@ -711,21 +712,6 @@ void kisVKLoadAssets()
         g_kisVkFrames[i].m_uniformBufferSize = uniformBufferSize;
     }
 
-//    // Rectangle
-//    kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent vertices_hardcoded[] = {
-//        { {-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
-//        { { 0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
-//        { { 0.5f,  0.5f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
-//        { {-0.5f,  0.5f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}}
-//    };
-//
-//    uint16_t indices_hardcoded[] = {
-//        0, 1, 2, 0, 2, 3
-//    };
-//
-//    kisVkCreateMesh(vertices_hardcoded, KIS_ARRAY_COUNT(vertices_hardcoded), indices_hardcoded, KIS_ARRAY_COUNT(indices_hardcoded), kisIndexBufferType::U16);
-
-    // load triangle
     kisFileBuffer vsBuffer = kisFileBufferCreate("data/triangle/triangle_vert.spv");
     VkShaderModule vsShader = kisVkCreateShader(vsBuffer);
     kisFileBufferDestroy(vsBuffer);
@@ -895,11 +881,10 @@ void kisVKLoadAssets()
         .pBindings = objectDescriptorSetLayoutBindings,
     };
 
-    VkDescriptorSetLayout objectDescriptorSetLayout;
-    KIS_VK_CHECK(vkCreateDescriptorSetLayout(g_kisVkInfo.m_device, &objectDescriptorSetLayoutCreateInfo, &g_kisVkAllocCallbacks, &objectDescriptorSetLayout));
+    KIS_VK_CHECK(vkCreateDescriptorSetLayout(g_kisVkInfo.m_device, &objectDescriptorSetLayoutCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_objectDescriptorSetLayout));
 
     const VkDescriptorSetLayout pipelineDescriptorSetLayouts[] = {
-        objectDescriptorSetLayout,
+        g_kisVkRenderContext.m_objectDescriptorSetLayout,
     };
 
     const VkPipelineLayoutCreateInfo layoutCreateInfo = {
@@ -934,57 +919,6 @@ void kisVKLoadAssets()
     };
 
     KIS_VK_CHECK(vkCreateGraphicsPipelines(g_kisVkInfo.m_device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_pipeline));
-
-    //
-    // Create individual objects.
-
-    // Duplicate the descriptor set layout for each image of the swapchain.
-    kisFixedArray<VkDescriptorSetLayout, k_kisVkMaxNumImages> descriptorSetLayoutPerImage;
-    for(uint32_t i = 0; i < g_kisVkInfo.m_nImages; i++)
-    {
-        descriptorSetLayoutPerImage.add(objectDescriptorSetLayout);
-    }
-
-    // Create descriptor sets.
-    const VkDescriptorSetAllocateInfo descriptorSetAllocInfo = {
-        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-        .descriptorPool = g_kisVkInfo.m_descriptorPool,
-        .descriptorSetCount = k_kisVkMaxNumImages,
-        .pSetLayouts = descriptorSetLayoutPerImage.dataPointer(),
-    };
-
-    kisStaticArray<VkDescriptorSet, k_kisVkMaxNumImages> descriptorSets;
-    KIS_VK_CHECK(vkAllocateDescriptorSets(g_kisVkInfo.m_device, &descriptorSetAllocInfo, descriptorSets.dataPointer()));
-
-    for(uint32_t iImage = 0; iImage < g_kisVkInfo.m_nImages; ++iImage)
-    {
-        kisVkDraw& draw = g_kisVkFrames[iImage].m_draws.add();
-        draw.m_descriptorSet = descriptorSets[iImage];
-        draw.m_iMesh = 0;
-
-        const VkDescriptorBufferInfo descriptorBufferInfo = {
-            .buffer = g_kisVkFrames[iImage].m_uniformBuffer,
-            .offset = g_kisVkFrames[iImage].m_uniformBufferOffset,
-            .range = sizeof(kisVkUBOObjectVertexBuffer)
-        };
-
-        const VkWriteDescriptorSet writeDescriptorSet = {
-            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .dstSet = descriptorSets[iImage],
-            .dstBinding = 0,
-            .dstArrayElement = 0,
-            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            .descriptorCount = 1,
-            .pBufferInfo = &descriptorBufferInfo,
-            .pImageInfo = nullptr,
-            .pTexelBufferView = nullptr,
-        };
-
-        vkUpdateDescriptorSets(g_kisVkInfo.m_device, 1, &writeDescriptorSet, 0, nullptr);
-
-        g_kisVkFrames[iImage].m_uniformBufferOffset += sizeof(kisVkUBOObjectVertexBuffer);
-        g_kisVkFrames[iImage].m_uniformBufferOffset = kisAlignPowerOf2(g_kisVkFrames[iImage].m_uniformBufferOffset, 16);
-    }
 }
 
 //--------------------------------------------------------------------------
@@ -1078,7 +1012,7 @@ void kisVkPrepareResolutionSwapchain(uint32_t width, uint32_t height)
     {
         vkDestroyImageView(g_kisVkInfo.m_device, g_kisVkInfo.m_swapchainImageViews[i], &g_kisVkAllocCallbacks);
     }
-    g_kisVkInfo.m_swapchainImageViews.clear();
+    g_kisVkInfo.m_swapchainImageViews.empty();
     
     // Destroy old swapchain.
     if(oldSwapchain != VK_NULL_HANDLE)
@@ -1199,7 +1133,7 @@ void kisVkDestroyFramebuffers()
         vkDestroyFramebuffer(g_kisVkInfo.m_device, frameBuffer, &g_kisVkAllocCallbacks);
     }
 
-    g_kisVkInfo.m_frameBuffers.clear();
+    g_kisVkInfo.m_frameBuffers.empty();
 }
 
 //--------------------------------------------------------------------------
@@ -1319,7 +1253,7 @@ void kisVkShutdown()
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void kisVkRender()
+void kisVkRender(const kisRenderParams& renderParams)
 {
     const VkCommandBufferBeginInfo cmdBufferBeginInfo = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -1340,22 +1274,79 @@ void kisVkRender()
     uint32_t iImage;
     vkAcquireNextImageKHR(g_kisVkInfo.m_device, g_kisVkInfo.m_swapchain, UINT64_MAX, g_kisVkRenderContext.m_imageAvailableSemaphore, VK_NULL_HANDLE, &iImage);
 
+    kisVkFrame& frame = g_kisVkFrames[iImage];
+
+    //
+    // Cleanup previous use.
+
+    frame.m_draws.empty();
+
+    vkFreeDescriptorSets(g_kisVkInfo.m_device, g_kisVkInfo.m_descriptorPool, frame.m_descriptorSets.num(), frame.m_descriptorSets.dataPointer());
+    frame.m_descriptorSets.empty();
+
+    frame.m_uniformBufferOffset = 0;
+
+    //
+    // Create draw calls.
+
+    for(uint32_t i = 0; i < renderParams.m_nInstances; i++)
+    {
+        VkDescriptorSet descriptorSet;
+
+        // Create descriptor sets.
+        const VkDescriptorSetAllocateInfo descriptorSetAllocInfo = {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+            .descriptorPool = g_kisVkInfo.m_descriptorPool,
+            .descriptorSetCount = 1,
+            .pSetLayouts = &g_kisVkRenderContext.m_objectDescriptorSetLayout,
+        };
+
+        vkAllocateDescriptorSets(g_kisVkInfo.m_device, &descriptorSetAllocInfo, &descriptorSet);
+        frame.m_descriptorSets.add(descriptorSet);
+
+        const VkDescriptorBufferInfo descriptorBufferInfo = {
+            .buffer = frame.m_uniformBuffer,
+            .offset = frame.m_uniformBufferOffset,
+            .range = sizeof(kisVkUBOObjectVertexBuffer)
+        };
+
+        const VkWriteDescriptorSet writeDescriptorSet = {
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = descriptorSet,
+            .dstBinding = 0,
+            .dstArrayElement = 0,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorCount = 1,
+            .pBufferInfo = &descriptorBufferInfo,
+            .pImageInfo = nullptr,
+            .pTexelBufferView = nullptr,
+        };
+
+        vkUpdateDescriptorSets(g_kisVkInfo.m_device, 1, &writeDescriptorSet, 0, nullptr);
+
+        frame.m_uniformBufferOffset += sizeof(kisVkUBOObjectVertexBuffer);
+        frame.m_uniformBufferOffset = kisAlignPowerOf2(g_kisVkFrames[iImage].m_uniformBufferOffset, 16);
+
+        kisVkDraw& draw = frame.m_draws.add();
+        draw.m_descriptorSet = descriptorSet;
+        draw.m_iMesh = renderParams.m_instances[i].m_iMesh;
+    }
+
     // Update UBOs.
     kisVkUBOObjectVertexBuffer ubo;
 
     static kisTime startTime = kisTimeNow();
     const double elapsed = kisTimeDelta(startTime, kisTimeNow());
-    //const float zRot = kisDegToRad((float)(90.0 * elapsed));
-    const float zRot = 0.0;
+    const float zRot = kisDegToRad((float)(90.0 * elapsed));
 
-    kisMat4 model = glm::rotate(kisMat4(1.0f), zRot, kisVec3(0.0f, 0.0f, 1.0f));
-    kisMat4 view = glm::lookAt(glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    kisMat4 projection = glm::perspective(kisDegToRad(45.0f), (float)g_kisVkInfo.m_swapchainSize.width / (float)g_kisVkInfo.m_swapchainSize.height, 0.1f, 10.0f);
+    kisMatrix4 model = glm::rotate(kisMatrix4(1.0f), zRot, kisVec3(0.0f, 0.0f, 1.0f));
+    kisMatrix4 view = glm::lookAt(glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    kisMatrix4 projection = glm::perspective(kisDegToRad(45.0f), (float)g_kisVkInfo.m_swapchainSize.width / (float)g_kisVkInfo.m_swapchainSize.height, 0.1f, 10.0f);
     projection[1][1] = -projection[1][1];
 
     ubo.m_modelViewProj = projection * view * model;
 
-    memcpy(g_kisVkFrames[iImage].m_uniformBufferMapped, &ubo, sizeof(ubo));
+    memcpy(frame.m_uniformBufferMapped, &ubo, sizeof(ubo));
 
     KIS_VK_CHECK(vkBeginCommandBuffer(g_kisVkInfo.m_cmdBuffer, &cmdBufferBeginInfo));
 
@@ -1440,7 +1431,6 @@ void kisVkRender()
         .pResults = nullptr,
     };
 
-    //KIS_VK_CHECK(vkQueuePresentKHR(g_kisVkInfo.m_presentQueue, &presentInfo));
     vkQueuePresentKHR(g_kisVkInfo.m_presentQueue, &presentInfo);
 }
 
@@ -1453,7 +1443,7 @@ void kisVkResize(uint32_t width, uint32_t height)
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void kisVkCreateMesh(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent* vertices, uint32_t nVertices, void* indices, uint32_t nIndices, kisIndexBufferType indexBufferType)
+uint32_t kisVkCreateMesh(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent* vertices, uint32_t nVertices, void* indices, uint32_t nIndices, kisIndexBufferType indexBufferType)
 {
     const size_t vertexBufferSize = sizeof(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent) * nVertices;
     const size_t indexBufferSize = nIndices * (indexBufferType == kisIndexBufferType::U16 ? sizeof(uint16_t) : sizeof(uint32_t));
@@ -1464,5 +1454,6 @@ void kisVkCreateMesh(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent* vertices, 
     mesh.m_nVertices = nVertices;
     mesh.m_nIndices = nIndices;
     mesh.m_indexType = kisVkIndexType(indexBufferType);
-    g_kisVkMeshes.add(mesh);
+
+    return g_kisVkMeshes.num() - 1;
 }
