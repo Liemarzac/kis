@@ -20,5 +20,9 @@ uint32_t kisGraphicsCreateMesh(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent* 
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-uint32_t kisGraphicsCreateInstance(uint32_t iMesh);
+kisMeshInstanceHandle kisGraphicsCreateMeshInstance(uint32_t iMesh);
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+kisMeshInstance& kisGraphicsGetMeshInstance(kisMeshInstanceHandle handle);
 

@@ -5,7 +5,7 @@
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-kisArray<kisMeshInstance> g_kisMeshInstances;
+kisMeshInstanceArray g_kisMeshInstances;
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
@@ -47,10 +47,17 @@ uint32_t kisGraphicsCreateMesh(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent* 
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-uint32_t kisGraphicsCreateInstance(uint32_t iMesh)
+kisMeshInstanceHandle kisGraphicsCreateMeshInstance(uint32_t iMesh)
 {
     kisMeshInstance& instance = g_kisMeshInstances.add();
     instance.m_iMesh = iMesh;
-    return g_kisMeshInstances.num() - 1;
+    return {g_kisMeshInstances.num() - 1};
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+kisMeshInstance& kisGraphicsGetMeshInstance(kisMeshInstanceHandle handle)
+{
+    return g_kisMeshInstances[handle.m_index];
 }
 

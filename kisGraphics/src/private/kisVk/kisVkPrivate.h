@@ -3,6 +3,7 @@
 #include "kisGraphicsShared.h"
 
 #include <kisCore/kisArray.h>
+#include <kisCore/kisCore.h>
 #include <kisCore/kisFixedArray.h>
 #include <kisCore/kisStaticArray.h>
 #include <kisCore/kisMath.h>
@@ -98,7 +99,7 @@ struct kisVkFrame
     kisArray<VkDescriptorSet> m_descriptorSets;
     VkBuffer m_uniformBuffer;
     VmaAllocation m_uniformBufferAlloc;
-    void* m_uniformBufferMapped;
+    kisByte* m_uniformBufferMapped;
     uint32_t m_uniformBufferOffset;
     uint32_t m_uniformBufferSize;
 };

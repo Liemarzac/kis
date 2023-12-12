@@ -6,7 +6,6 @@
 #include <kisCore/kisFile.h>
 #include <kisCore/kisMath.h>
 #include <kisCore/kisStringANSIStatic.h>
-#include <kisCore/kisTime.h>
 
 #include <stdlib.h>
 
@@ -707,7 +706,7 @@ void kisVKLoadAssets()
         KIS_ASSERT(allocInfo.pMappedData != nullptr);
         g_kisVkFrames[i].m_uniformBuffer = buffer;
         g_kisVkFrames[i].m_uniformBufferAlloc = alloc;
-        g_kisVkFrames[i].m_uniformBufferMapped = allocInfo.pMappedData;
+        g_kisVkFrames[i].m_uniformBufferMapped = (kisByte*)allocInfo.pMappedData;
         g_kisVkFrames[i].m_uniformBufferOffset = 0;
         g_kisVkFrames[i].m_uniformBufferSize = uniformBufferSize;
     }
@@ -1286,6 +1285,12 @@ void kisVkRender(const kisRenderParams& renderParams)
 
     frame.m_uniformBufferOffset = 0;
 
+    // Setup view and projection matrix.
+    kisMatrix4 view = glm::lookAt(glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    kisMatrix4 projection = glm::perspective(kisDegToRad(45.0f), (float)g_kisVkInfo.m_swapchainSize.width / (float)g_kisVkInfo.m_swapchainSize.height, 0.1f, 10.0f);
+    projection[1][1] = -projection[1][1];
+
+    
     //
     // Create draw calls.
 
@@ -1324,6 +1329,13 @@ void kisVkRender(const kisRenderParams& renderParams)
 
         vkUpdateDescriptorSets(g_kisVkInfo.m_device, 1, &writeDescriptorSet, 0, nullptr);
 
+        // Update uniform buffer.
+        kisByte* writePtr = frame.m_uniformBufferMapped + frame.m_uniformBufferOffset;
+        kisVkUBOObjectVertexBuffer* ubo = (kisVkUBOObjectVertexBuffer*)writePtr;
+
+        kisMatrix4 instanceTransform = renderParams.m_instances[i].m_orientation;
+        ubo->m_modelViewProj = projection * view * instanceTransform;
+
         frame.m_uniformBufferOffset += sizeof(kisVkUBOObjectVertexBuffer);
         frame.m_uniformBufferOffset = kisAlignPowerOf2(g_kisVkFrames[iImage].m_uniformBufferOffset, 16);
 
@@ -1331,22 +1343,6 @@ void kisVkRender(const kisRenderParams& renderParams)
         draw.m_descriptorSet = descriptorSet;
         draw.m_iMesh = renderParams.m_instances[i].m_iMesh;
     }
-
-    // Update UBOs.
-    kisVkUBOObjectVertexBuffer ubo;
-
-    static kisTime startTime = kisTimeNow();
-    const double elapsed = kisTimeDelta(startTime, kisTimeNow());
-    const float zRot = kisDegToRad((float)(90.0 * elapsed));
-
-    kisMatrix4 model = glm::rotate(kisMatrix4(1.0f), zRot, kisVec3(0.0f, 0.0f, 1.0f));
-    kisMatrix4 view = glm::lookAt(glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    kisMatrix4 projection = glm::perspective(kisDegToRad(45.0f), (float)g_kisVkInfo.m_swapchainSize.width / (float)g_kisVkInfo.m_swapchainSize.height, 0.1f, 10.0f);
-    projection[1][1] = -projection[1][1];
-
-    ubo.m_modelViewProj = projection * view * model;
-
-    memcpy(frame.m_uniformBufferMapped, &ubo, sizeof(ubo));
 
     KIS_VK_CHECK(vkBeginCommandBuffer(g_kisVkInfo.m_cmdBuffer, &cmdBufferBeginInfo));
 

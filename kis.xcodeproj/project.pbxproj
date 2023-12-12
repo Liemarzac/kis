@@ -842,6 +842,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = external/glm;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -894,6 +895,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = external/glm;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -1054,7 +1056,7 @@
 				DEVELOPMENT_TEAM = 7LMD5965ZQ;
 				HEADER_SEARCH_PATHS = (
 					external/Eigen,
-					external/glm,
+					"${inherited}",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				OTHER_LDFLAGS = "-ObjC";
@@ -1074,7 +1076,7 @@
 				DEVELOPMENT_TEAM = 7LMD5965ZQ;
 				HEADER_SEARCH_PATHS = (
 					external/Eigen,
-					external/glm,
+					"${inherited}",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				OTHER_LDFLAGS = "-ObjC";
@@ -1094,9 +1096,9 @@
 				HEADER_SEARCH_PATHS = (
 					kisCore/src/public,
 					external/Eigen,
-					external/glm,
 					external/MoltenVK/include,
 					external/VulkanMemoryAllocator/include,
+					"${inherited}",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				OTHER_LDFLAGS = "";
@@ -1116,9 +1118,9 @@
 				HEADER_SEARCH_PATHS = (
 					kisCore/src/public,
 					external/Eigen,
-					external/glm,
 					external/MoltenVK/include,
 					external/VulkanMemoryAllocator/include,
+					"${inherited}",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				OTHER_LDFLAGS = "";
@@ -1251,6 +1253,7 @@
 					kisCore/src/public,
 					kisGraphics/src/public,
 					"external/assimp-5.3.1/include",
+					"${inherited}",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				OTHER_LDFLAGS = "-ObjC";
@@ -1270,6 +1273,7 @@
 					kisCore/src/public,
 					kisGraphics/src/public,
 					"external/assimp-5.3.1/include",
+					"${inherited}",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				OTHER_LDFLAGS = "-ObjC";

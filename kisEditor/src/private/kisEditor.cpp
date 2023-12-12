@@ -5,6 +5,7 @@
 #include <kisCore/kisArray.h>
 #include <kisCore/kisBuffer.h>
 #include <kisCore/kisFile.h>
+#include <kisCore/kisTime.h>
 #include <kisGraphics/kisGraphics.h>
 
 #include <assimp/cimport.h>        // Plain-C interface
@@ -13,6 +14,7 @@
 
 #include <float.h>
 
+kisArray<kisMeshInstanceHandle> g_kisMeshInstanceHandles;
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
@@ -163,7 +165,8 @@ void kisEditorLoadScene(const char* path)
         }
 
         uint32_t iKisMesh = kisGraphicsCreateMesh(vertexBuffer.dataPointer(), vertexBuffer.num(), indexBufer.getStart(), mesh->mNumFaces * 3, sizeofIndex == sizeof(uint16_t) ? kisIndexBufferType::U16 : kisIndexBufferType::U32);
-        kisGraphicsCreateInstance(iKisMesh);
+
+        g_kisMeshInstanceHandles.add(kisGraphicsCreateMeshInstance(iKisMesh));
     }
 
     aiReleaseImport(scene);
@@ -196,6 +199,18 @@ void kisEditorShutdown()
 //--------------------------------------------------------------------------
 void kisEditorRender()
 {
+    static kisTime startTime = kisTimeNow();
+    const double elapsed = kisTimeDelta(startTime, kisTimeNow());
+    const float zRot = kisDegToRad((float)(90.0 * elapsed));
+
+    kisMatrix4 orientation = glm::rotate(kisMatrix4(1.0f), zRot, kisVec3(0.0f, 0.0f, 1.0f));
+
+    for(kisMeshInstanceHandle handle : g_kisMeshInstanceHandles)
+    {
+        kisMeshInstance& instance = kisGraphicsGetMeshInstance(handle);
+        instance.m_orientation = orientation;
+    }
+
     kisGraphicsRender();
 }
 

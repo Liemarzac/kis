@@ -1,14 +1,9 @@
 #pragma once
 
-#include <kisCore/kisArray.h>
-#include <kisCore/kisCore.h>
-#include <kisCore/kisMath.h>
+#include "kisGraphicsShared.h"
 
-struct kisMeshInstance
-{
-    uint32_t m_iMesh;
-    kisMatrix4 m_transform;
-};
+#include <kisCore/kisFixedArray.h>
+#include <kisCore/kisCore.h>
 
 struct kisRenderParams
 {
@@ -16,4 +11,6 @@ struct kisRenderParams
     uint32_t m_nInstances;
 };
 
-extern kisArray<kisMeshInstance> g_kisMeshInstances;
+const uint32_t kisMaxNumMeshInstances = 1024;
+typedef kisFixedArray<kisMeshInstance, kisMaxNumMeshInstances> kisMeshInstanceArray;
+extern kisMeshInstanceArray g_kisMeshInstances;

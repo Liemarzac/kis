@@ -1,5 +1,19 @@
 #pragma once
 
+#include <kisCore/kisCore.h>
+#include <kisCore/kisMath.h>
+
+struct kisMeshInstanceHandle
+{
+    uint32_t m_index;
+};
+
+struct kisMeshInstance
+{
+    uint32_t m_iMesh;
+    kisMatrix4 m_orientation;
+};
+
 struct kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent
 {
     float m_position[3];
