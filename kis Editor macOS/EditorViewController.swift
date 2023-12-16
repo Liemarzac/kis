@@ -17,6 +17,10 @@ class EditorViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        if let window = self.view.window {
+            window.isReleasedWhenClosed = true
+        }
+
         guard let mtkView = self.view as? MTKView else {
             print("View attached to GameViewController is not an MTKView")
             return
@@ -54,5 +58,9 @@ class EditorViewController: NSViewController {
 
         kisEditorInit(editorParams)
         editorParams.deallocate()
+    }
+
+    override func viewWillDisappear() {
+        print("View will disappear");
     }
 }
