@@ -1061,7 +1061,6 @@
 					"${inherited}",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
-				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -1081,7 +1080,6 @@
 					"${inherited}",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
-				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
@@ -1103,7 +1101,6 @@
 					"${inherited}",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
-				OTHER_LDFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PUBLIC_HEADERS_FOLDER_PATH = /usr/local/include;
 				SKIP_INSTALL = YES;
@@ -1125,7 +1122,6 @@
 					"${inherited}",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
-				OTHER_LDFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PUBLIC_HEADERS_FOLDER_PATH = /usr/local/include;
 				SKIP_INSTALL = YES;
@@ -1146,7 +1142,6 @@
 					"${inherited}",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
-				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
@@ -1165,7 +1160,6 @@
 					"${inherited}",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
-				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
