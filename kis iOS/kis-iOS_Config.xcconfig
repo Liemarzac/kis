@@ -7,5 +7,5 @@
 
 // Configuration settings file format documentation can be found at:
 // https://help.apple.com/xcode/#/dev745c5c974
-OTHER_LDFLAGS[sdk=iphonesimulator*] = -ObjC external/MoltenVK/MoltenVK.xcframework/iOS-arm64_x86_64-simulator/libMoltenVK.a
-OTHER_LDFLAGS[sdk=iphoneos*] = -ObjC external/MoltenVK/MoltenVK.xcframework/iOS-arm64/libMoltenVK.a
+OTHER_LDFLAGS[sdk=iphonesimulator*] = external/MoltenVK/MoltenVK.xcframework/iOS-arm64_x86_64-simulator/libMoltenVK.a
+OTHER_LDFLAGS[sdk=iphoneos*] = external/MoltenVK/MoltenVK.xcframework/iOS-arm64/libMoltenVK.a
