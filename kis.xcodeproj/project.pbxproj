@@ -165,6 +165,7 @@
 		7A0B75FE2AFAE2D300CD2584 /* kisFixedArray.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = kisFixedArray.h; path = src/public/kisCore/kisFixedArray.h; sourceTree = "<group>"; };
 		7A0B75FF2AFCCC2800CD2584 /* kisTime.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisTime.h; path = src/public/kisCore/kisTime.h; sourceTree = "<group>"; };
 		7A0B76002AFCCC4B00CD2584 /* kisTime.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = kisTime.cpp; path = src/private/kisTime.cpp; sourceTree = "<group>"; };
+		7A36CA862B4B2E3C00A006D8 /* kisFixedHashMap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = kisFixedHashMap.h; path = src/public/kisCore/kisFixedHashMap.h; sourceTree = "<group>"; };
 		7A452D5D2AE4000000700DCB /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 		7A452D5F2AE4000000700DCB /* ShaderTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShaderTypes.h; sourceTree = "<group>"; };
 		7A452D602AE4000200700DCB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -344,6 +345,7 @@
 		7A452D952AE4002E00700DCB /* kisCore */ = {
 			isa = PBXGroup;
 			children = (
+				7A36CA862B4B2E3C00A006D8 /* kisFixedHashMap.h */,
 				7A0B75FE2AFAE2D300CD2584 /* kisFixedArray.h */,
 				7A0B75FD2AFAE2D300CD2584 /* kisStaticArray.h */,
 				7A0B75FC2AF8DD9E00CD2584 /* kisArray.h */,

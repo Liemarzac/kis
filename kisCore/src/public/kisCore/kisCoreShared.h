@@ -28,11 +28,13 @@ void kisLogTableFooter();
 //--------------------------------------------------------------------------
 #define KIS_DEBUG
 #if defined(KIS_DEBUG)
-#define KIS_ASSERT(CONDITION) if((CONDITION) == false){kisLogError("Assertion Failed"); raise(SIGTRAP);}
-#define KIS_CHECK(CONDITION) KIS_ASSERT(CONDITION)
+    #define KIS_ASSERT(CONDITION) if((CONDITION) == false){kisLogError("Assertion Failed"); raise(SIGTRAP);}
+    #define KIS_CHECK(CONDITION) KIS_ASSERT(CONDITION)
+    #define KIS_PERF_ASSERT(CONDITION) KIS_ASSERT(CONDITION)
 #else
-#define KIS_ASSERT(CONDITION)
-#define KIS_CHECK(CONDITION) CONDITION
+    #define KIS_ASSERT(CONDITION)
+    #define KIS_CHECK(CONDITION) CONDITION
+    #define KIS_PERF_ASSERT(CONDITION)
 #endif
 
 //--------------------------------------------------------------------------

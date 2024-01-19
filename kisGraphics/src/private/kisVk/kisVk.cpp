@@ -4,6 +4,7 @@
 #include "kisVkResources.h"
 
 #include <kisCore/kisFile.h>
+#include <kisCore/kisFixedHashMap.h>
 #include <kisCore/kisMath.h>
 #include <kisCore/kisStringANSIStatic.h>
 
@@ -44,9 +45,12 @@ struct kisVkRenderContext
 //--------------------------------------------------------------------------
 struct kisVkMemBlock
 {
-    void* m_pointer;
     size_t m_size;
 };
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+static const uint32_t s_kisVkMaxNumAllocs = 8192;
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
@@ -58,8 +62,16 @@ struct kisVertexFormatPos2Color3
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
+uint32_t kisVkHashPointer(void* p)
+{
+    KIS_ASSERT(kisIsPowerOf2(s_kisVkMaxNumAllocs));
+    return ((uintptr_t)p >> 4) & (s_kisVkMaxNumAllocs - 1);
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 kisVkRenderContext g_kisVkRenderContext;
-kisFixedArray<kisVkMemBlock, 2048> g_vulkanMemBlocks;
+kisFixedHashMap<void*, kisVkMemBlock, s_kisVkMaxNumAllocs, kisVkHashPointer> g_vulkanMemBlocks;
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
@@ -74,12 +86,18 @@ void* kisVkAlloc(
     VkSystemAllocationScope     allocationScope)
 {
     void* pointer = aligned_alloc(alignment, size);
-    kisVkMemBlock block = {
-        .m_pointer = pointer,
-        .m_size = size
-    };
 
-    g_vulkanMemBlocks.add(block);
+    auto itr = g_vulkanMemBlocks.add(pointer);
+    (*itr).m_size = size;
+
+#if defined(KIS_DEBUG)
+    if(g_vulkanMemBlocks.getNumKeys() > 100)
+    {
+        const float collisionRatio = g_vulkanMemBlocks.getCollisionRatio();
+        KIS_PERF_ASSERT(collisionRatio < 0.1f);
+    }
+#endif
+
     return pointer;
 }
 
@@ -92,21 +110,17 @@ void* kisVkRealloc(
     size_t                      alignment,
     VkSystemAllocationScope     allocationScope)
 {
-    size_t originalSize = 0;
-    for(uint32_t i = 0; i < g_vulkanMemBlocks.num(); ++i)
-    {
-        if(g_vulkanMemBlocks[i].m_pointer == pOriginal)
-        {
-            originalSize = g_vulkanMemBlocks[i].m_size;
-            g_vulkanMemBlocks.removeUnordered(i);
-            break;
-        }
-    }
-
+    auto itrOldPointer = g_vulkanMemBlocks.find(pOriginal);
+    KIS_ASSERT(itrOldPointer.isValid());
+    const size_t oldSizeSize = (*itrOldPointer).m_size;
+    g_vulkanMemBlocks.remove(itrOldPointer);
+    
     void* newPointer = aligned_alloc(alignment, size);
+    auto itrNewPointer = g_vulkanMemBlocks.add(newPointer);
+    (*itrNewPointer).m_size = size;
 
-    size_t cpySize = originalSize;
-    if(originalSize > size)
+    size_t cpySize = oldSizeSize;
+    if(oldSizeSize > size)
     {
         cpySize = size;
     }
@@ -130,15 +144,8 @@ void kisVkFree(void* pUserData, void* pointer)
         return;
     }
 
-    for(uint32_t i = 0; i < g_vulkanMemBlocks.num(); ++i)
-    {
-        if(g_vulkanMemBlocks[i].m_pointer == pointer)
-        {
-            free(pointer);
-            g_vulkanMemBlocks.removeUnordered(i);
-            break;
-        }
-    }
+    g_vulkanMemBlocks.remove(pointer);
+    free(pointer);
 }
 
 //--------------------------------------------------------------------------
