@@ -13,6 +13,9 @@
 		7A0B76012AFCCC4B00CD2584 /* kisTime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A0B76002AFCCC4B00CD2584 /* kisTime.cpp */; };
 		7A36CA832B35F70B00A006D8 /* libkisCore_macOS.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A8BD5842B35F48E00A23795 /* libkisCore_macOS.a */; };
 		7A36CA842B35F71200A006D8 /* libkisGraphics_macOS.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A8BD5A22B35F51000A23795 /* libkisGraphics_macOS.a */; };
+		7A36CA8E2B5C68A400A006D8 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A36CA8D2B5C68A400A006D8 /* main.cpp */; };
+		7A36CA922B5C6CF800A006D8 /* libkisCore_macOS.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A8BD5842B35F48E00A23795 /* libkisCore_macOS.a */; };
+		7A36CA962B5E621100A006D8 /* kisTestHashMap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A36CA952B5E621100A006D8 /* kisTestHashMap.cpp */; };
 		7A452D692AE4000200700DCB /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A452D682AE4000200700DCB /* AppDelegate.swift */; };
 		7A452D6B2AE4000200700DCB /* GameViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A452D6A2AE4000200700DCB /* GameViewController.swift */; };
 		7A452D6E2AE4000200700DCB /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7A452D6C2AE4000200700DCB /* Main.storyboard */; };
@@ -83,6 +86,13 @@
 			remoteGlobalIDString = 7A8BD5942B35F51000A23795;
 			remoteInfo = kisGraphics_macOS;
 		};
+		7A36CA932B5C6D0800A006D8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7A452D582AE4000000700DCB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7A8BD5772B35F48E00A23795;
+			remoteInfo = kisCore_macOS;
+		};
 		7A452DCE2AE430B200700DCB /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 7A452D582AE4000000700DCB /* Project object */;
@@ -149,6 +159,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		7A36CA892B5C68A400A006D8 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		7A452D922AE4002E00700DCB /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -228,6 +247,9 @@
 		7A0B75FF2AFCCC2800CD2584 /* kisTime.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisTime.h; path = src/public/kisCore/kisTime.h; sourceTree = "<group>"; };
 		7A0B76002AFCCC4B00CD2584 /* kisTime.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = kisTime.cpp; path = src/private/kisTime.cpp; sourceTree = "<group>"; };
 		7A36CA862B4B2E3C00A006D8 /* kisFixedHashMap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = kisFixedHashMap.h; path = src/public/kisCore/kisFixedHashMap.h; sourceTree = "<group>"; };
+		7A36CA8B2B5C68A400A006D8 /* kisTest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = kisTest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7A36CA8D2B5C68A400A006D8 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		7A36CA952B5E621100A006D8 /* kisTestHashMap.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = kisTestHashMap.cpp; sourceTree = "<group>"; };
 		7A452D5D2AE4000000700DCB /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 		7A452D5F2AE4000000700DCB /* ShaderTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShaderTypes.h; sourceTree = "<group>"; };
 		7A452D602AE4000200700DCB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -281,6 +303,14 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		7A36CA882B5C68A400A006D8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7A36CA922B5C6CF800A006D8 /* libkisCore_macOS.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		7A452D622AE4000200700DCB /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -365,6 +395,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		7A36CA8C2B5C68A400A006D8 /* kisTest */ = {
+			isa = PBXGroup;
+			children = (
+				7A36CA8D2B5C68A400A006D8 /* main.cpp */,
+				7A36CA952B5E621100A006D8 /* kisTestHashMap.cpp */,
+			);
+			path = kisTest;
+			sourceTree = "<group>";
+		};
 		7A452D572AE4000000700DCB = {
 			isa = PBXGroup;
 			children = (
@@ -378,6 +417,7 @@
 				7A452D952AE4002E00700DCB /* kisCore */,
 				7A452DA82AE400FC00700DCB /* kisGraphics */,
 				7A452DC32AE42AA600700DCB /* kisEngine */,
+				7A36CA8C2B5C68A400A006D8 /* kisTest */,
 				7A452D662AE4000200700DCB /* Products */,
 				7A452DD62AE431FF00700DCB /* Frameworks */,
 			);
@@ -408,6 +448,7 @@
 				7A8BD5842B35F48E00A23795 /* libkisCore_macOS.a */,
 				7A8BD5932B35F4C000A23795 /* libkisEngine_macOS.a */,
 				7A8BD5A22B35F51000A23795 /* libkisGraphics_macOS.a */,
+				7A36CA8B2B5C68A400A006D8 /* kisTest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -525,6 +566,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		7A36CA8A2B5C68A400A006D8 /* kisTest */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7A36CA912B5C68A400A006D8 /* Build configuration list for PBXNativeTarget "kisTest" */;
+			buildPhases = (
+				7A36CA872B5C68A400A006D8 /* Sources */,
+				7A36CA882B5C68A400A006D8 /* Frameworks */,
+				7A36CA892B5C68A400A006D8 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				7A36CA942B5C6D0800A006D8 /* PBXTargetDependency */,
+			);
+			name = kisTest;
+			productName = kisTest;
+			productReference = 7A36CA8B2B5C68A400A006D8 /* kisTest */;
+			productType = "com.apple.product-type.tool";
+		};
 		7A452D642AE4000200700DCB /* kis iOS */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 7A452D8A2AE4000200700DCB /* Build configuration list for PBXNativeTarget "kis iOS" */;
@@ -716,6 +775,9 @@
 				LastSwiftUpdateCheck = 1430;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					7A36CA8A2B5C68A400A006D8 = {
+						CreatedOnToolsVersion = 14.3;
+					};
 					7A452D642AE4000200700DCB = {
 						CreatedOnToolsVersion = 14.3;
 					};
@@ -757,6 +819,7 @@
 				7A8BD5772B35F48E00A23795 /* kisCore_macOS */,
 				7A8BD5852B35F4C000A23795 /* kisEngine_macOS */,
 				7A8BD5942B35F51000A23795 /* kisGraphics_macOS */,
+				7A36CA8A2B5C68A400A006D8 /* kisTest */,
 			);
 		};
 /* End PBXProject section */
@@ -797,6 +860,15 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		7A36CA872B5C68A400A006D8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7A36CA962B5E621100A006D8 /* kisTestHashMap.cpp in Sources */,
+				7A36CA8E2B5C68A400A006D8 /* main.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		7A452D612AE4000200700DCB /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -917,6 +989,11 @@
 			target = 7A8BD5942B35F51000A23795 /* kisGraphics_macOS */;
 			targetProxy = 7A36CA812B35F70300A006D8 /* PBXContainerItemProxy */;
 		};
+		7A36CA942B5C6D0800A006D8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7A8BD5772B35F48E00A23795 /* kisCore_macOS */;
+			targetProxy = 7A36CA932B5C6D0800A006D8 /* PBXContainerItemProxy */;
+		};
 		7A452DCF2AE430B200700DCB /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 7A452D932AE4002E00700DCB /* kisCore_iOS */;
@@ -992,6 +1069,38 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		7A36CA8F2B5C68A400A006D8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 7LMD5965ZQ;
+				ENABLE_HARDENED_RUNTIME = YES;
+				HEADER_SEARCH_PATHS = (
+					kisCore/src/public,
+					external/glm,
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.3;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		7A36CA902B5C68A400A006D8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 7LMD5965ZQ;
+				ENABLE_HARDENED_RUNTIME = YES;
+				HEADER_SEARCH_PATHS = (
+					kisCore/src/public,
+					external/glm,
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.3;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
 		7A452D882AE4000200700DCB /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1608,6 +1717,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		7A36CA912B5C68A400A006D8 /* Build configuration list for PBXNativeTarget "kisTest" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7A36CA8F2B5C68A400A006D8 /* Debug */,
+				7A36CA902B5C68A400A006D8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		7A452D5B2AE4000000700DCB /* Build configuration list for PBXProject "kis" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

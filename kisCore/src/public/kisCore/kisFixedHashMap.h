@@ -1,5 +1,7 @@
 #pragma once
 
+#include "kisCoreShared.h"
+
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 template<typename Key, typename Value, uint32_t Capacity, uint32_t (*HashFunc)(Key)>
@@ -15,6 +17,8 @@ public:
         Iterator(kisFixedHashMap& hashMap);
         Iterator& operator++();
         Value& operator*();
+        const Key& getKey() const;
+        Value& getValue() const;
         bool isValid() const;
 
     private:
@@ -217,7 +221,7 @@ typename kisFixedHashMap<Key, Value, Capacity, HashFunc>::Iterator kisFixedHashM
 template<typename Key, typename Value, uint32_t Capacity, uint32_t (*HashFunc)(Key)>
 typename kisFixedHashMap<Key, Value, Capacity, HashFunc>::Iterator kisFixedHashMap<Key, Value, Capacity, HashFunc>::begin()
 {
-    Iterator itr;
+    Iterator itr(*this);
     itr.m_iEntry = m_entries[m_iSentinelUsedList].m_iNextInList;
     return itr;
 }
@@ -295,8 +299,28 @@ template<typename Key, typename Value, uint32_t Capacity, uint32_t (*HashFunc)(K
 typename kisFixedHashMap<Key, Value, Capacity, HashFunc>::Iterator& kisFixedHashMap<Key, Value, Capacity, HashFunc>::Iterator::operator++()
 {
     KIS_ASSERT(isValid());
-    m_iEntry = m_hashMap.m_entries[m_iEntry].m_nextInList;
+    m_iEntry = m_hashMap.m_entries[m_iEntry].m_iNextInList;
     return *this;
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+template<typename Key, typename Value, uint32_t Capacity, uint32_t (*HashFunc)(Key)>
+const Key& kisFixedHashMap<Key, Value, Capacity, HashFunc>::Iterator::getKey() const
+{
+    KIS_ASSERT(isValid());
+    return m_hashMap.m_entries[m_iEntry].m_key;
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+template<typename Key, typename Value, uint32_t Capacity, uint32_t (*HashFunc)(Key)>
+Value& kisFixedHashMap<Key, Value, Capacity, HashFunc>::Iterator::getValue() const
+{
+    KIS_ASSERT(isValid());
+    const int iValue = m_iEntry - 2;
+    KIS_ASSERT(iValue >= 0 && iValue < Capacity);
+    return m_hashMap.m_values[iValue];
 }
 
 //--------------------------------------------------------------------------
@@ -304,10 +328,7 @@ typename kisFixedHashMap<Key, Value, Capacity, HashFunc>::Iterator& kisFixedHash
 template<typename Key, typename Value, uint32_t Capacity, uint32_t (*HashFunc)(Key)>
 Value& kisFixedHashMap<Key, Value, Capacity, HashFunc>::Iterator::operator*()
 {
-    KIS_ASSERT(isValid());
-    const int iValue = m_iEntry - 2;
-    KIS_ASSERT(iValue >= 0 && iValue < Capacity);
-    return m_hashMap.m_values[iValue];
+    return getValue();
 }
 
 //--------------------------------------------------------------------------
