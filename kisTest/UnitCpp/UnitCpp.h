@@ -669,11 +669,14 @@ inline void UnitCpp::TestCase::display_results(std::ostream& os)
   for (auto it = begin(m_results); it != end(m_results); ++it) {
     TestResult result = *it;
     if (result.pass) {
-      os << "Pass: ";
+    // #KIS_BEGIN: Only show failed testds.
+    //  os << "Pass: ";
     } else {
       os << "Fail: ";
+      os << result.message << "\n";
     }
-    os << result.message << "\n";
+    //os << result.message << "\n";
+    // #KIS_END
   }
   os << "\n";
   if (!m_passed) {
