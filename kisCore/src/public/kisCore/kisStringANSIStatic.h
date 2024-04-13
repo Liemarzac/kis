@@ -50,6 +50,11 @@ public:
         return m_nUsed;
     }
 
+    bool operator==(const char* other) const
+    {
+        return strcmp(m_buffer, other) == 0;
+    }
+
 private:
     char m_buffer[Size];
     uint32_t m_nUsed = 0;

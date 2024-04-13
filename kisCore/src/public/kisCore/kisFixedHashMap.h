@@ -44,6 +44,7 @@ private:
     struct Entry
     {
         Key m_key;
+        int m_iPrevInList;
         int m_iNextInList;
         int m_iNextInBucket;
     };
@@ -71,14 +72,21 @@ private:
 template<typename Key, typename Value, uint32_t Capacity, uint32_t (*HashFunc)(Key)>
 kisFixedHashMap<Key, Value, Capacity, HashFunc>::kisFixedHashMap()
 {
+    m_entries[m_iSentinelFreeList].m_iPrevInList = ms_nEntries - 1;
     m_entries[m_iSentinelFreeList].m_iNextInList = 2;
+    m_entries[m_iSentinelUsedList].m_iPrevInList = m_iSentinelUsedList;
     m_entries[m_iSentinelUsedList].m_iNextInList = m_iSentinelUsedList;
 
-    for(int i = 2; i < ms_nEntries - 1; i++)
+    m_entries[2].m_iPrevInList = m_iSentinelFreeList;
+    m_entries[2].m_iNextInList = 3;
+    
+    for(int i = 3; i < ms_nEntries - 1; i++)
     {
+        m_entries[i].m_iPrevInList = i - 1;
         m_entries[i].m_iNextInList = i + 1;
     }
 
+    m_entries[ms_nEntries - 1].m_iPrevInList = ms_nEntries - 2;
     m_entries[ms_nEntries - 1].m_iNextInList = m_iSentinelFreeList;
 
     for(int i = 0; i < ms_nEntries; i++)
@@ -253,10 +261,20 @@ int kisFixedHashMap<Key, Value, Capacity, HashFunc>::acquireEntry()
 {
     int iAcquired = m_entries[m_iSentinelFreeList].m_iNextInList;
     KIS_ASSERT(iAcquired != m_iSentinelFreeList); // Full if this assert triggers.
+
+    // Remove the acquired entry from the free list.
     m_entries[m_iSentinelFreeList].m_iNextInList = m_entries[iAcquired].m_iNextInList;
-    int iInsertBefore = m_entries[m_iSentinelUsedList].m_iNextInList;
-    m_entries[m_iSentinelUsedList].m_iNextInList = iAcquired;
-    m_entries[iAcquired].m_iNextInList = iInsertBefore;
+    m_entries[m_entries[iAcquired].m_iNextInList].m_iPrevInList = m_iSentinelFreeList;
+
+    // Add the acquired entry in the used list
+    int iInsertAfter = m_entries[m_iSentinelUsedList].m_iPrevInList;
+    m_entries[iInsertAfter].m_iNextInList = iAcquired;
+    m_entries[m_iSentinelUsedList].m_iPrevInList = iAcquired;
+
+    // Re-link acquired entry in the used list.
+    m_entries[iAcquired].m_iPrevInList = iInsertAfter;
+    m_entries[iAcquired].m_iNextInList = m_iSentinelUsedList;
+    
     return iAcquired;
 }
 
@@ -265,8 +283,17 @@ int kisFixedHashMap<Key, Value, Capacity, HashFunc>::acquireEntry()
 template<typename Key, typename Value, uint32_t Capacity, uint32_t (*HashFunc)(Key)>
 void kisFixedHashMap<Key, Value, Capacity, HashFunc>::releaseEntry(int iEntry)
 {
+    // Remove the entry from the used list.
+    m_entries[m_entries[iEntry].m_iPrevInList].m_iNextInList = m_entries[iEntry].m_iNextInList;
+    m_entries[m_entries[iEntry].m_iNextInList].m_iPrevInList = m_entries[iEntry].m_iPrevInList;;
+
+    // Add the acquired entry in the free list
     int iInsertBefore = m_entries[m_iSentinelFreeList].m_iNextInList;
+    m_entries[iInsertBefore].m_iPrevInList = iEntry;
     m_entries[m_iSentinelFreeList].m_iNextInList = iEntry;
+
+    // Re-link acquired entry in the used list.
+    m_entries[iEntry].m_iPrevInList = m_iSentinelFreeList;
     m_entries[iEntry].m_iNextInList = iInsertBefore;
 }
 

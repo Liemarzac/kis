@@ -193,6 +193,7 @@ void kisEditorInit(const kisEditorInitParams* params)
 void kisEditorShutdown()
 {
     kisGraphicsShutdown();
+    kisCoreShutdown();
 }
 
 //--------------------------------------------------------------------------

@@ -17,8 +17,25 @@ void kisCoreInit(const kisCoreInitParams& params)
     kisMemInit();
     kisMemThreadInit();
 
+    KIS_MEM_SCOPE_START(core);
+
+    KIS_MEM_SCOPE_START(test);
+    int* a = (int*)KIS_ALLOC(sizeof(int*), "a_int");
+    KIS_FREE(a);
+    KIS_MEM_SCOPE_END(test);
+
     kisCoreStringCopy(g_kisFileDataPath, sizeof(g_kisFileDataPath), params.m_dataPath);
     kisFileOutputFilesystem();
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisCoreShutdown()
+{
+    KIS_MEM_SCOPE_END(core);
+
+    kisMemThreadShutdown();
+    kisMemShutdown();
 }
 
 //--------------------------------------------------------------------------

@@ -5,34 +5,23 @@
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-const uint32_t k_kisMarkersNumBytes = 16;
-const uint32_t k_kisMaxNumMarkers = k_kisMarkersNumBytes * 8;
-const uint32_t k_kisMaxMarkersStackDepth = 16;
-
-//--------------------------------------------------------------------------
-//--------------------------------------------------------------------------
 #if defined(KIS_DEBUG)
 #define KIS_ALLOC(size, name) kisMemAlloc(size, name, __FILE__, __LINE__)
 #define KIS_ALIGNED_ALLOC(size, alignment, name) kisMemAlloc(size, name, __FILE__, __LINE__, alignment)
+#define KIS_MEM_SCOPE_START_(name, VAR_UNIQUE_ID)     static uint32_t KIS_CONCAT(s_memScope_, VAR_UNIQUE_ID) = kisMemScopeFindOrCreate(#name);\
+kisMemScopeStart(KIS_CONCAT(s_memScope_, VAR_UNIQUE_ID));
+#define KIS_MEM_SCOPE_START(name) KIS_MEM_SCOPE_START_(name, __LINE__)
+#define KIS_MEM_SCOPE_END_(name, VAR_UNIQUE_ID)       static uint32_t KIS_CONCAT(s_memScope_, VAR_UNIQUE_ID) = kisMemScopeFindOrCreate(#name);\
+kisMemScopeEnd(KIS_CONCAT(s_memScope_, VAR_UNIQUE_ID));
+#define KIS_MEM_SCOPE_END(name) KIS_MEM_SCOPE_END_(name, __LINE__)
 #else
 #define KIS_ALLOC(size, name) kisMemAlloc(size)
 #define KIS_ALIGNED_ALLOC(size, alignment, name) kisMemAlloc(size, alignment)
+#define KIS_MEM_SCOPE_START(name)
+#define KIS_MEM_SCOPE_END(name)
 #endif
 #define KIS_FREE(alloc) kisMemFree(alloc)
 
-//--------------------------------------------------------------------------
-//--------------------------------------------------------------------------
-struct KisMemMarker
-{
-    uint8_t m_bitfield[k_kisMarkersNumBytes];
-};
-
-//--------------------------------------------------------------------------
-//--------------------------------------------------------------------------
-struct kisMemScope
-{
-    kisFixedStack<KisMemMarker, k_kisMaxMarkersStackDepth> m_markersStack;
-};
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
@@ -62,8 +51,17 @@ void* kisMemAlloc(size_t size, uint32_t alignment = 16);
 //--------------------------------------------------------------------------
 void kisMemFree(void* p);
 
+#if defined(KIS_DEBUG)
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void kisSetMarker(const char* markerName);
+void kisMemScopeStart(uint32_t index);
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisMemScopeEnd(uint32_t index);
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+uint32_t kisMemScopeFindOrCreate(const char* name);
+#endif
 

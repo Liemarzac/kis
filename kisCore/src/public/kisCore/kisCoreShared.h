@@ -29,6 +29,7 @@ void kisLogTableFooter();
 #define KIS_DEBUG
 #if defined(KIS_DEBUG)
     #define KIS_ASSERT(CONDITION) if((CONDITION) == false){kisLogError("Assertion Failed"); raise(SIGTRAP);}
+    #define KIS_LOG_ASSERT(CONDITION, ...) if((CONDITION) == false){kisLogError(__VA_ARGS__); raise(SIGTRAP);}
     #define KIS_CHECK(CONDITION) KIS_ASSERT(CONDITION)
     #define KIS_PERF_ASSERT(CONDITION) KIS_ASSERT(CONDITION)
 #else
@@ -40,6 +41,8 @@ void kisLogTableFooter();
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 #define KIS_ARRAY_COUNT(X) sizeof(X)/sizeof(X[0])
+#define KIS_INVALID_INDEX -1
+#define KIS_CONCAT(a, b) a ## b
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
