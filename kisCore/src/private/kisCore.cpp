@@ -1,5 +1,6 @@
 #include "kisCore.h"
 #include "kisFile.h"
+#include "kisMem.h"
 
 #include <cstdio>
 #include <cstring>
@@ -13,8 +14,10 @@ extern char g_kisFileDataPath[k_kisCoreMaxPathSize];
 //--------------------------------------------------------------------------
 void kisCoreInit(const kisCoreInitParams& params)
 {
-    kisCoreStringCopy(g_kisFileDataPath, sizeof(g_kisFileDataPath), params.m_dataPath);
+    kisMemInit();
+    kisMemThreadInit();
 
+    kisCoreStringCopy(g_kisFileDataPath, sizeof(g_kisFileDataPath), params.m_dataPath);
     kisFileOutputFilesystem();
 }
 

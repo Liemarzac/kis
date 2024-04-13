@@ -16,7 +16,6 @@ public:
     public:
         Iterator(kisFixedHashMap& hashMap);
         Iterator& operator++();
-        Value& operator*();
         const Key& getKey() const;
         Value& getValue() const;
         bool isValid() const;
@@ -321,14 +320,6 @@ Value& kisFixedHashMap<Key, Value, Capacity, HashFunc>::Iterator::getValue() con
     const int iValue = m_iEntry - 2;
     KIS_ASSERT(iValue >= 0 && iValue < Capacity);
     return m_hashMap.m_values[iValue];
-}
-
-//--------------------------------------------------------------------------
-//--------------------------------------------------------------------------
-template<typename Key, typename Value, uint32_t Capacity, uint32_t (*HashFunc)(Key)>
-Value& kisFixedHashMap<Key, Value, Capacity, HashFunc>::Iterator::operator*()
-{
-    return getValue();
 }
 
 //--------------------------------------------------------------------------

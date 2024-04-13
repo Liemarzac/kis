@@ -1,12 +1,8 @@
-//
-//  kisHash.h
-//  kis
-//
-//  Created by Sylvain Gibouret on 29/01/2024.
-//
+#pragma once
 
-#ifndef kisHash_h
-#define kisHash_h
+#include "kisCoreShared.h"
 
-
-#endif /* kisHash_h */
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+uint32_t kisHashStringAsUInt32(const char* str);
+uint64_t kisHashStringAsUInt64(const char* str);

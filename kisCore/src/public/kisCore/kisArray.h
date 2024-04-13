@@ -76,7 +76,14 @@ public:
 
     //--------------------------------------------------------------------------
     //--------------------------------------------------------------------------
-    kisArray(uint32_t reserve = 32)
+    kisArray() :
+        m_elements(nullptr)
+        ,m_capacity(0)
+        ,m_nElements(0)
+    {
+    }
+
+    kisArray(uint32_t reserve)
     {
         m_elements = (T*)kisMemAlloc(sizeof(T) * reserve);
         m_capacity = reserve;
@@ -195,7 +202,11 @@ private:
                 newElements[i] = m_elements[i];
             }
 
-            kisMemFree(m_elements);
+            if(m_elements != nullptr)
+            {
+                kisMemFree(m_elements);
+            }
+
             m_elements = newElements;
             m_capacity = newCapacity;
         }

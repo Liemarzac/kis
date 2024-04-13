@@ -88,7 +88,7 @@ void* kisVkAlloc(
     void* pointer = aligned_alloc(alignment, size);
 
     auto itr = g_vulkanMemBlocks.add(pointer);
-    (*itr).m_size = size;
+    itr.getValue().m_size = size;
 
 #if defined(KIS_DEBUG)
     if(g_vulkanMemBlocks.getNumKeys() > 100)
@@ -112,12 +112,12 @@ void* kisVkRealloc(
 {
     auto itrOldPointer = g_vulkanMemBlocks.find(pOriginal);
     KIS_ASSERT(itrOldPointer.isValid());
-    const size_t oldSizeSize = (*itrOldPointer).m_size;
+    const size_t oldSizeSize = itrOldPointer.getValue().m_size;
     g_vulkanMemBlocks.remove(itrOldPointer);
     
     void* newPointer = aligned_alloc(alignment, size);
     auto itrNewPointer = g_vulkanMemBlocks.add(newPointer);
-    (*itrNewPointer).m_size = size;
+    itrNewPointer.getValue().m_size = size;
 
     size_t cpySize = oldSizeSize;
     if(oldSizeSize > size)
