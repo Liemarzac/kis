@@ -14,7 +14,8 @@ TEST(FixedHashMap, Simple)
     for(uint32_t i = 0; i < 100; ++i)
     {
         auto itr = map.add(i);
-        (*itr) = i * 10;
+        uint32_t& value = itr.getValue();
+        value = i *10;
     }
 
     bool keysFound[100];

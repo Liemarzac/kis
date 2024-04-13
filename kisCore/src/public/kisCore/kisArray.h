@@ -85,7 +85,7 @@ public:
 
     kisArray(uint32_t reserve)
     {
-        m_elements = (T*)kisMemAlloc(sizeof(T) * reserve);
+        m_elements = (T*)KIS_ALLOC(sizeof(T) * reserve, "kisArray");
         m_capacity = reserve;
         m_nElements = 0;
     }
@@ -196,7 +196,7 @@ private:
 
         if(newCapacity > m_capacity)
         {
-            T* newElements = (T*)kisMemAlloc(newCapacity * sizeof(T));
+            T* newElements = (T*)KIS_ALLOC(newCapacity * sizeof(T), "kisArray");
             for(uint32_t i = 0; i < m_nElements; i++)
             {
                 newElements[i] = m_elements[i];
@@ -204,7 +204,7 @@ private:
 
             if(m_elements != nullptr)
             {
-                kisMemFree(m_elements);
+                KIS_FREE(m_elements);
             }
 
             m_elements = newElements;

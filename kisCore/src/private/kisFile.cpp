@@ -47,7 +47,7 @@ kisFileBuffer kisFileBufferCreate(const char* path)
     {
         fileBuffer.m_size = file.tellg();
         file.seekg(0);
-        fileBuffer.m_data = kisMemAlloc(fileBuffer.m_size);
+        fileBuffer.m_data = KIS_ALLOC(fileBuffer.m_size, "kisFileBuffer");
         file.read((char*)fileBuffer.m_data, fileBuffer.m_size);
         file.close();
     }
