@@ -39,18 +39,9 @@ struct kisVkRenderContext
     VkSemaphore m_imageAvailableSemaphore;
     VkSemaphore m_queueExecutedSemaphore;
     VkFence m_queueExecutedFence;
+    VkShaderModule m_vsShader;
+    VkShaderModule m_psShader;
 };
-
-//--------------------------------------------------------------------------
-//--------------------------------------------------------------------------
-struct kisVkMemBlock
-{
-    size_t m_size;
-};
-
-//--------------------------------------------------------------------------
-//--------------------------------------------------------------------------
-static const uint32_t s_kisVkMaxNumAllocs = 8192;
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
@@ -62,16 +53,8 @@ struct kisVertexFormatPos2Color3
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-uint32_t kisVkHashPointer(void* p)
-{
-    KIS_ASSERT(kisIsPowerOf2(s_kisVkMaxNumAllocs));
-    return ((uintptr_t)p >> 4) & (s_kisVkMaxNumAllocs - 1);
-}
-
-//--------------------------------------------------------------------------
-//--------------------------------------------------------------------------
 kisVkRenderContext g_kisVkRenderContext;
-kisFixedHashMap<void*, kisVkMemBlock, s_kisVkMaxNumAllocs, kisVkHashPointer> g_vulkanMemBlocks;
+kisVk* g_kisVk = nullptr;
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
@@ -85,20 +68,14 @@ void* kisVkAlloc(
     size_t                      alignment,
     VkSystemAllocationScope     allocationScope)
 {
-    void* pointer = aligned_alloc(alignment, size);
+    #if defined(KIS_DEBUG)
+    static uint32_t s_allocIndex = 0;
+    kisStringANSIStatic<64> allocName;
+    allocName.concat("vulkan_alloc_%u", s_allocIndex);
+    s_allocIndex++;
+    #endif
 
-    auto itr = g_vulkanMemBlocks.add(pointer);
-    itr.getValue().m_size = size;
-
-#if defined(KIS_DEBUG)
-    if(g_vulkanMemBlocks.getNumKeys() > 100)
-    {
-        const float collisionRatio = g_vulkanMemBlocks.getCollisionRatio();
-        KIS_PERF_ASSERT(collisionRatio < 0.1f);
-    }
-#endif
-
-    return pointer;
+    return KIS_ALIGNED_ALLOC(size, (uint32_t)alignment, kisMemTag::Vulkan, allocName.c_str());
 }
 
 //--------------------------------------------------------------------------
@@ -110,42 +87,14 @@ void* kisVkRealloc(
     size_t                      alignment,
     VkSystemAllocationScope     allocationScope)
 {
-    auto itrOldPointer = g_vulkanMemBlocks.find(pOriginal);
-    KIS_ASSERT(itrOldPointer.isValid());
-    const size_t oldSizeSize = itrOldPointer.getValue().m_size;
-    g_vulkanMemBlocks.remove(itrOldPointer);
-    
-    void* newPointer = aligned_alloc(alignment, size);
-    auto itrNewPointer = g_vulkanMemBlocks.add(newPointer);
-    itrNewPointer.getValue().m_size = size;
-
-    size_t cpySize = oldSizeSize;
-    if(oldSizeSize > size)
-    {
-        cpySize = size;
-    }
-
-    if(cpySize > 0)
-    {
-        memcpy(newPointer, pOriginal, cpySize);
-    }
-
-    free(pOriginal);
-
-    return newPointer;
+    return KIS_REALLOC(pOriginal, size);
 }
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 void kisVkFree(void* pUserData, void* pointer)
 {
-    if(pointer == nullptr)
-    {
-        return;
-    }
-
-    g_vulkanMemBlocks.remove(pointer);
-    free(pointer);
+    KIS_FREE(pointer);
 }
 
 //--------------------------------------------------------------------------
@@ -374,6 +323,7 @@ void kisVkCreateInstance(bool bPortabilityEnumerationActive)
     }
 
     KIS_VK_CHECK(vkCreateInstance(&instanceCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_instance));
+    KIS_MEM_REGISTER_EXTERNAL(g_kisVkInfo.m_instance, kisMemTag::Vulkan,  "vulkan_instance");
 
     KIS_VK_GET_PROC_ADDR(g_kisVkInfo.m_instance, GetPhysicalDeviceSurfaceCapabilitiesKHR);
     KIS_VK_GET_PROC_ADDR(g_kisVkInfo.m_instance, GetPhysicalDeviceSurfaceFormatsKHR);
@@ -391,6 +341,7 @@ void kisVkCreateSurface(const void* metalLayer)
     surfaceCreateInfo.flags = 0;
     surfaceCreateInfo.pLayer = metalLayer;
     KIS_VK_CHECK(vkCreateMetalSurfaceEXT(g_kisVkInfo.m_instance, &surfaceCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_surface));
+    KIS_MEM_REGISTER_EXTERNAL(g_kisVkInfo.m_surface, kisMemTag::Vulkan, "vulkan_metal_surface");
 }
 
 //--------------------------------------------------------------------------
@@ -559,6 +510,7 @@ void kisVkCreateDevice()
     }
 
     KIS_VK_CHECK(vkCreateDevice(g_kisVkInfo.m_physicalDevice, &deviceCreateInfos, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_device));
+    KIS_MEM_REGISTER_EXTERNAL(g_kisVkInfo.m_device, kisMemTag::Vulkan, "vulkan_device");
 
     vkGetDeviceQueue(g_kisVkInfo.m_device, g_kisVkInfo.m_iGraphicsQueueFamily, 0, &g_kisVkInfo.m_graphicsQueue);
     vkGetDeviceQueue(g_kisVkInfo.m_device, g_kisVkInfo.m_iPresentQueueFamily, 0, &g_kisVkInfo.m_presentQueue);
@@ -593,6 +545,7 @@ void kisVkCreateDevice()
     };
 
     KIS_VK_CHECK(vkAllocateCommandBuffers(g_kisVkInfo.m_device, &cmdBufferAllocInfo, &g_kisVkInfo.m_cmdBuffer));
+    KIS_MEM_REGISTER_EXTERNAL(g_kisVkInfo.m_cmdBuffer, kisMemTag::Vulkan, "vulkan_command_buffer");
 
     // Create desciptor pool.
     const VkDescriptorPoolSize uniformBuffersDescriptorPoolSize = {
@@ -608,6 +561,7 @@ void kisVkCreateDevice()
     };
 
     KIS_VK_CHECK(vkCreateDescriptorPool(g_kisVkInfo.m_device, &descriptorPoolCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_descriptorPool));
+    KIS_MEM_REGISTER_EXTERNAL(g_kisVkInfo.m_descriptorPool, kisMemTag::Vulkan, "vulkan_descriptor_pool");
 
     const VkSemaphoreCreateInfo semaphoreCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
@@ -616,8 +570,10 @@ void kisVkCreateDevice()
     };
 
     vkCreateSemaphore(g_kisVkInfo.m_device, &semaphoreCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_imageAvailableSemaphore);
+    KIS_MEM_REGISTER_EXTERNAL(g_kisVkRenderContext.m_imageAvailableSemaphore, kisMemTag::Vulkan, "vulkan_semaphore_image_avail");
 
     vkCreateSemaphore(g_kisVkInfo.m_device, &semaphoreCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_queueExecutedSemaphore);
+    KIS_MEM_REGISTER_EXTERNAL(g_kisVkRenderContext.m_queueExecutedSemaphore, kisMemTag::Vulkan, "vulkan_semaphore_queue_executed");
 
     const VkFenceCreateInfo fenceCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
@@ -625,6 +581,7 @@ void kisVkCreateDevice()
     };
 
     vkCreateFence(g_kisVkInfo.m_device, &fenceCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_queueExecutedFence);
+    KIS_MEM_REGISTER_EXTERNAL(g_kisVkRenderContext.m_queueExecutedFence, kisMemTag::Vulkan, "vulkan_fence_queue_executed");
 
     // Create render pass.
     const VkAttachmentDescription colorAttachmentDesc = {
@@ -670,6 +627,7 @@ void kisVkCreateDevice()
     };
 
     KIS_VK_CHECK(vkCreateRenderPass(g_kisVkInfo.m_device, &renderPassCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_renderPass));
+    KIS_MEM_REGISTER_EXTERNAL(g_kisVkRenderContext.m_renderPass, kisMemTag::Vulkan, "vulkan_render_pass");
 }
 
 //--------------------------------------------------------------------------
@@ -682,6 +640,7 @@ VkShaderModule kisVkCreateShader(const kisFileBuffer& spirVCode)
     createInfo.pCode = (uint32_t*)spirVCode.m_data;
     VkShaderModule shader;
     KIS_VK_CHECK(vkCreateShaderModule(g_kisVkInfo.m_device, &createInfo, &g_kisVkAllocCallbacks, &shader));
+    KIS_MEM_REGISTER_EXTERNAL(shader, kisMemTag::Vulkan, "vulkan_shader_module");
     return shader;
 }
 
@@ -710,20 +669,22 @@ void kisVKLoadAssets()
         VmaAllocation alloc;
         VmaAllocationInfo allocInfo;
         vmaCreateBuffer(g_kisVkInfo.m_vmaAllocator, &uniformBufferCreateInfo, &uniformBufferAllocationInfo, &buffer, &alloc, &allocInfo);
+        KIS_MEM_REGISTER_EXTERNAL(buffer, kisMemTag::Vulkan, "uniform_buffer");
+        KIS_MEM_REGISTER_EXTERNAL(alloc, kisMemTag::Vulkan, "uniform_buffer_alloc");
         KIS_ASSERT(allocInfo.pMappedData != nullptr);
-        g_kisVkFrames[i].m_uniformBuffer = buffer;
-        g_kisVkFrames[i].m_uniformBufferAlloc = alloc;
-        g_kisVkFrames[i].m_uniformBufferMapped = (kisByte*)allocInfo.pMappedData;
-        g_kisVkFrames[i].m_uniformBufferOffset = 0;
-        g_kisVkFrames[i].m_uniformBufferSize = uniformBufferSize;
+        g_kisVk->m_frames[i].m_uniformBuffer = buffer;
+        g_kisVk->m_frames[i].m_uniformBufferAlloc = alloc;
+        g_kisVk->m_frames[i].m_uniformBufferMapped = (kisByte*)allocInfo.pMappedData;
+        g_kisVk->m_frames[i].m_uniformBufferOffset = 0;
+        g_kisVk->m_frames[i].m_uniformBufferSize = uniformBufferSize;
     }
 
     kisFileBuffer vsBuffer = kisFileBufferCreate("data/triangle/triangle_vert.spv");
-    VkShaderModule vsShader = kisVkCreateShader(vsBuffer);
+    g_kisVkRenderContext.m_vsShader = kisVkCreateShader(vsBuffer);
     kisFileBufferDestroy(vsBuffer);
 
     kisFileBuffer psBuffer = kisFileBufferCreate("data/triangle/triangle_frag.spv");
-    VkShaderModule psShader = kisVkCreateShader(psBuffer);
+    g_kisVkRenderContext.m_psShader = kisVkCreateShader(psBuffer);
     kisFileBufferDestroy(psBuffer);
 
     const VkVertexInputBindingDescription vertexInputBindingDescription = {
@@ -776,14 +737,14 @@ void kisVKLoadAssets()
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .pNext = nullptr,
             .stage = VK_SHADER_STAGE_VERTEX_BIT,
-            .module = vsShader,
+            .module = g_kisVkRenderContext.m_vsShader,
             .pName = "main",
         },
         {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .pNext = nullptr,
             .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .module = psShader,
+            .module = g_kisVkRenderContext.m_psShader,
             .pName = "main",
         }
     };
@@ -888,6 +849,7 @@ void kisVKLoadAssets()
     };
 
     KIS_VK_CHECK(vkCreateDescriptorSetLayout(g_kisVkInfo.m_device, &objectDescriptorSetLayoutCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_objectDescriptorSetLayout));
+    KIS_MEM_REGISTER_EXTERNAL(g_kisVkRenderContext.m_objectDescriptorSetLayout, kisMemTag::Vulkan, "vulkan_descriptorset_layout");
 
     const VkDescriptorSetLayout pipelineDescriptorSetLayouts[] = {
         g_kisVkRenderContext.m_objectDescriptorSetLayout,
@@ -903,6 +865,7 @@ void kisVKLoadAssets()
     };
 
     KIS_VK_CHECK(vkCreatePipelineLayout(g_kisVkInfo.m_device, &layoutCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_pipelineLayout));
+    KIS_MEM_REGISTER_EXTERNAL(g_kisVkRenderContext.m_pipelineLayout, kisMemTag::Vulkan, "vulkan_pipeline_layout");
 
     VkGraphicsPipelineCreateInfo pipelineCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
@@ -925,6 +888,44 @@ void kisVKLoadAssets()
     };
 
     KIS_VK_CHECK(vkCreateGraphicsPipelines(g_kisVkInfo.m_device, VK_NULL_HANDLE, 1, &pipelineCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkRenderContext.m_pipeline));
+    KIS_MEM_REGISTER_EXTERNAL(g_kisVkRenderContext.m_pipeline, kisMemTag::Vulkan, "vulkan_pipeline");
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisVkUnloadAssets()
+{
+    KIS_MEM_UNREGISTER_EXTERNAL(g_kisVkRenderContext.m_pipeline);
+    vkDestroyPipeline(g_kisVkInfo.m_device, g_kisVkRenderContext.m_pipeline, &g_kisVkAllocCallbacks);
+    g_kisVkRenderContext.m_pipeline = VK_NULL_HANDLE;
+
+    KIS_MEM_UNREGISTER_EXTERNAL(g_kisVkRenderContext.m_pipelineLayout);
+    vkDestroyPipelineLayout(g_kisVkInfo.m_device, g_kisVkRenderContext.m_pipelineLayout, &g_kisVkAllocCallbacks);
+    g_kisVkRenderContext.m_pipelineLayout = VK_NULL_HANDLE;
+    
+    KIS_MEM_UNREGISTER_EXTERNAL(g_kisVkRenderContext.m_objectDescriptorSetLayout);
+    vkDestroyDescriptorSetLayout(g_kisVkInfo.m_device, g_kisVkRenderContext.m_objectDescriptorSetLayout, &g_kisVkAllocCallbacks);
+    g_kisVkRenderContext.m_objectDescriptorSetLayout = VK_NULL_HANDLE;
+
+    KIS_MEM_UNREGISTER_EXTERNAL(g_kisVkRenderContext.m_psShader);
+    vkDestroyShaderModule(g_kisVkInfo.m_device, g_kisVkRenderContext.m_psShader, &g_kisVkAllocCallbacks);
+    g_kisVkRenderContext.m_psShader = VK_NULL_HANDLE;
+
+    KIS_MEM_UNREGISTER_EXTERNAL(g_kisVkRenderContext.m_vsShader);
+    vkDestroyShaderModule(g_kisVkInfo.m_device, g_kisVkRenderContext.m_vsShader, &g_kisVkAllocCallbacks);
+    g_kisVkRenderContext.m_vsShader = VK_NULL_HANDLE;
+
+    for(uint32_t i = 0 ; i < g_kisVkInfo.m_nImages; ++ i)
+    {
+        KIS_MEM_UNREGISTER_EXTERNAL(g_kisVk->m_frames[i].m_uniformBufferAlloc);
+        KIS_MEM_UNREGISTER_EXTERNAL(g_kisVk->m_frames[i].m_uniformBuffer);
+        vmaDestroyBuffer(g_kisVkInfo.m_vmaAllocator, g_kisVk->m_frames[i].m_uniformBuffer, g_kisVk->m_frames[i].m_uniformBufferAlloc);
+        g_kisVk->m_frames[i].m_uniformBuffer = VK_NULL_HANDLE;
+        g_kisVk->m_frames[i].m_uniformBufferAlloc = VK_NULL_HANDLE;
+        g_kisVk->m_frames[i].m_uniformBufferMapped = nullptr;
+        g_kisVk->m_frames[i].m_uniformBufferOffset = 0;
+        g_kisVk->m_frames[i].m_uniformBufferSize = 0;
+    }
 }
 
 //--------------------------------------------------------------------------
@@ -1009,13 +1010,18 @@ void kisVkPrepareResolutionSwapchain(uint32_t width, uint32_t height)
         .clipped = true,
     };
 
+    // Old swapchain is destroyed in the same call used to create the new one.
+    KIS_MEM_UNREGISTER_EXTERNAL(oldSwapchain);
+    
     KIS_VK_CHECK(vkCreateSwapchainKHR(g_kisVkInfo.m_device, &swapchainCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_swapchain));
+    KIS_MEM_REGISTER_EXTERNAL(g_kisVkInfo.m_swapchain, kisMemTag::Vulkan, "vulkan_swapchain");
 
     g_kisVkInfo.m_nImages = nSwapchainImages;
 
     // Destroy old image views.
     for(int i = 0 ; i < g_kisVkInfo.m_swapchainImageViews.num(); ++i)
     {
+        KIS_MEM_UNREGISTER_EXTERNAL(g_kisVkInfo.m_swapchainImageViews[i]);
         vkDestroyImageView(g_kisVkInfo.m_device, g_kisVkInfo.m_swapchainImageViews[i], &g_kisVkAllocCallbacks);
     }
     g_kisVkInfo.m_swapchainImageViews.empty();
@@ -1052,6 +1058,7 @@ void kisVkPrepareResolutionSwapchain(uint32_t width, uint32_t height)
 
         VkImageView imageView = VK_NULL_HANDLE;
         KIS_VK_CHECK(vkCreateImageView(g_kisVkInfo.m_device, &imageViewCreateInfo, &g_kisVkAllocCallbacks, &imageView));
+        KIS_MEM_REGISTER_EXTERNAL(imageView, kisMemTag::Vulkan, "vulkan_image_view");
         g_kisVkInfo.m_swapchainImageViews.add(imageView);
     }
 }
@@ -1063,6 +1070,8 @@ void kisVkPrepareResolutionDepth()
     // Destroy old depth.
     if(g_kisVkInfo.m_depthImage != VK_NULL_HANDLE)
     {
+        KIS_MEM_UNREGISTER_EXTERNAL(g_kisVkInfo.m_depthImageView);
+        KIS_MEM_UNREGISTER_EXTERNAL(g_kisVkInfo.m_depthImage);
         vkDestroyImageView(g_kisVkInfo.m_device, g_kisVkInfo.m_depthImageView, &g_kisVkAllocCallbacks);
         vmaDestroyImage(g_kisVkInfo.m_vmaAllocator, g_kisVkInfo.m_depthImage, g_kisVkInfo.m_depthAlloc);
     }
@@ -1090,6 +1099,7 @@ void kisVkPrepareResolutionDepth()
     };
 
     vmaCreateImage(g_kisVkInfo.m_vmaAllocator, &imageCreateInfo, &allocCreateInfo, &g_kisVkInfo.m_depthImage, &g_kisVkInfo.m_depthAlloc, nullptr);
+    KIS_MEM_REGISTER_EXTERNAL(g_kisVkInfo.m_depthImage, kisMemTag::Vulkan, "depth_image");
 
     kisVkNameObject(VK_OBJECT_TYPE_IMAGE, (uint64_t)g_kisVkInfo.m_depthImage, "depth_image");
 
@@ -1105,6 +1115,7 @@ void kisVkPrepareResolutionDepth()
     };
 
     KIS_VK_CHECK(vkCreateImageView(g_kisVkInfo.m_device, &imageViewCreateInfo, &g_kisVkAllocCallbacks, &g_kisVkInfo.m_depthImageView));
+    KIS_MEM_REGISTER_EXTERNAL(g_kisVkInfo.m_depthImageView, kisMemTag::Vulkan, "vulkan_depth_image_view");
     kisVkNameObject(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)g_kisVkInfo.m_depthImageView, "depth_view");
 }
 
@@ -1126,6 +1137,7 @@ void kisVkCreateResolutionFramebuffer()
 
         VkFramebuffer frameBuffer;
         KIS_VK_CHECK(vkCreateFramebuffer(g_kisVkInfo.m_device, &frameBufferCreateInfo, &g_kisVkAllocCallbacks, &frameBuffer));
+        KIS_MEM_REGISTER_EXTERNAL(frameBuffer, kisMemTag::Vulkan, "vulkan_frame_buffer");
         g_kisVkInfo.m_frameBuffers.add(frameBuffer);
     }
 }
@@ -1136,6 +1148,7 @@ void kisVkDestroyFramebuffers()
 {
     for(VkFramebuffer frameBuffer : g_kisVkInfo.m_frameBuffers)
     {
+        KIS_MEM_UNREGISTER_EXTERNAL(frameBuffer);
         vkDestroyFramebuffer(g_kisVkInfo.m_device, frameBuffer, &g_kisVkAllocCallbacks);
     }
 
@@ -1158,7 +1171,11 @@ void kisVkPrepareResolution(uint32_t width, uint32_t height)
 //--------------------------------------------------------------------------
 void kisVkInit(const void* metalLayer)
 {
+    KIS_MEM_SCOPE_BEGIN(kisMemTag::Vulkan);
+
     kisLog("Initializing Vulkan");
+
+    g_kisVk = KIS_NEW(kisMemTag::Vulkan, "vk")kisVk();
 
     memset(&g_kisVkInfo, 0, sizeof(g_kisVkInfo));
     g_kisVkInfo.m_bValidate = true;
@@ -1185,76 +1202,115 @@ void kisVkInit(const void* metalLayer)
 //--------------------------------------------------------------------------
 void kisVkShutdown()
 {
+    kisVkUnloadAssets();
+
     for(uint32_t i = 0; i < g_kisVkInfo.m_nImages; i++)
     {
-        vkDestroyBuffer(g_kisVkInfo.m_device, g_kisVkFrames[i].m_uniformBuffer, &g_kisVkAllocCallbacks);
-        vmaFreeMemory(g_kisVkInfo.m_vmaAllocator, g_kisVkFrames[i].m_uniformBufferAlloc);
+        KIS_MEM_UNREGISTER_EXTERNAL(g_kisVk->m_frames[i].m_uniformBuffer);
+        vkDestroyBuffer(g_kisVkInfo.m_device, g_kisVk->m_frames[i].m_uniformBuffer, &g_kisVkAllocCallbacks);
+        KIS_MEM_UNREGISTER_EXTERNAL(g_kisVk->m_frames[i].m_uniformBufferAlloc);
+        vmaFreeMemory(g_kisVkInfo.m_vmaAllocator, g_kisVk->m_frames[i].m_uniformBufferAlloc);
     }
 
     for(VkSemaphore semaphore : g_kisVkInfo.m_imageAvailSemaphore)
     {
+        KIS_MEM_UNREGISTER_EXTERNAL(semaphore);
         vkDestroySemaphore(g_kisVkInfo.m_device, semaphore, &g_kisVkAllocCallbacks);
     }
 
+    KIS_MEM_UNREGISTER_EXTERNAL(g_kisVkRenderContext.m_renderPass);
+    vkDestroyRenderPass(g_kisVkInfo.m_device, g_kisVkRenderContext.m_renderPass, &g_kisVkAllocCallbacks);
+
+    KIS_MEM_UNREGISTER_EXTERNAL(g_kisVkRenderContext.m_queueExecutedFence);
+    vkDestroyFence(g_kisVkInfo.m_device, g_kisVkRenderContext.m_queueExecutedFence, &g_kisVkAllocCallbacks);
+
+    KIS_MEM_UNREGISTER_EXTERNAL(g_kisVkRenderContext.m_queueExecutedSemaphore);
+    vkDestroySemaphore(g_kisVkInfo.m_device, g_kisVkRenderContext.m_queueExecutedSemaphore, &g_kisVkAllocCallbacks);
+
+    KIS_MEM_UNREGISTER_EXTERNAL(g_kisVkRenderContext.m_imageAvailableSemaphore);
+    vkDestroySemaphore(g_kisVkInfo.m_device, g_kisVkRenderContext.m_imageAvailableSemaphore, &g_kisVkAllocCallbacks);
+
     if(g_kisVkInfo.m_descriptorPool != VK_NULL_HANDLE)
     {
+        KIS_MEM_UNREGISTER_EXTERNAL(g_kisVkInfo.m_descriptorPool);
         vkDestroyDescriptorPool(g_kisVkInfo.m_device, g_kisVkInfo.m_descriptorPool, &g_kisVkAllocCallbacks);
+    }
+
+    if(g_kisVkInfo.m_cmdBuffer != VK_NULL_HANDLE)
+    {
+        KIS_MEM_UNREGISTER_EXTERNAL(g_kisVkInfo.m_cmdBuffer);
+        vkFreeCommandBuffers(g_kisVkInfo.m_device, g_kisVkInfo.m_cmdPool, 1, &g_kisVkInfo.m_cmdBuffer);
     }
 
     if(g_kisVkInfo.m_cmdPool != VK_NULL_HANDLE)
     {
+        KIS_MEM_UNREGISTER_EXTERNAL(g_kisVkInfo.m_cmdPool);
         vkDestroyCommandPool(g_kisVkInfo.m_device, g_kisVkInfo.m_cmdPool, &g_kisVkAllocCallbacks);
     }
 
     for(VkFramebuffer framebuffer : g_kisVkInfo.m_frameBuffers)
     {
+        KIS_MEM_UNREGISTER_EXTERNAL(framebuffer);
         vkDestroyFramebuffer(g_kisVkInfo.m_device, framebuffer, &g_kisVkAllocCallbacks);
     }
 
     if(g_kisVkInfo.m_depthImageView != VK_NULL_HANDLE)
     {
+        KIS_MEM_UNREGISTER_EXTERNAL(g_kisVkInfo.m_depthImageView);
         vkDestroyImageView(g_kisVkInfo.m_device, g_kisVkInfo.m_depthImageView, &g_kisVkAllocCallbacks);
     }
 
     if(g_kisVkInfo.m_depthImage != VK_NULL_HANDLE)
     {
+        KIS_MEM_UNREGISTER_EXTERNAL(g_kisVkInfo.m_depthImage);
         vkDestroyImage(g_kisVkInfo.m_device, g_kisVkInfo.m_depthImage, &g_kisVkAllocCallbacks);
     }
 
     if(g_kisVkInfo.m_depthAlloc)
     {
+        KIS_MEM_UNREGISTER_EXTERNAL(g_kisVkInfo.m_depthAlloc);
         vmaFreeMemory(g_kisVkInfo.m_vmaAllocator, g_kisVkInfo.m_depthAlloc);
     }
 
     for(VkImageView imageView : g_kisVkInfo.m_swapchainImageViews)
     {
+        KIS_MEM_UNREGISTER_EXTERNAL(imageView);
         vkDestroyImageView(g_kisVkInfo.m_device, imageView, &g_kisVkAllocCallbacks);
     }
 
     if(g_kisVkInfo.m_swapchain != VK_NULL_HANDLE)
     {
+        KIS_MEM_UNREGISTER_EXTERNAL(g_kisVkInfo.m_swapchain);
         vkDestroySwapchainKHR(g_kisVkInfo.m_device, g_kisVkInfo.m_swapchain, &g_kisVkAllocCallbacks);
-    }
-
-    if(g_kisVkInfo.m_vmaAllocator)
-    {
-        vmaDestroyAllocator(g_kisVkInfo.m_vmaAllocator);
-    }
-
-    if(g_kisVkInfo.m_device != VK_NULL_HANDLE)
-    {
-        vkDestroyDevice(g_kisVkInfo.m_device, &g_kisVkAllocCallbacks);
     }
 
     if(g_kisVkInfo.m_surface != VK_NULL_HANDLE)
     {
+        KIS_MEM_UNREGISTER_EXTERNAL(g_kisVkInfo.m_surface);
         vkDestroySurfaceKHR(g_kisVkInfo.m_instance, g_kisVkInfo.m_surface, &g_kisVkAllocCallbacks);
     }
 
     if(g_kisVkInfo.m_instance != VK_NULL_HANDLE)
     {
+        KIS_MEM_UNREGISTER_EXTERNAL(g_kisVkInfo.m_instance);
         vkDestroyInstance(g_kisVkInfo.m_instance, nullptr);
     }
+
+    if(g_kisVkInfo.m_vmaAllocator)
+    {
+        KIS_MEM_UNREGISTER_EXTERNAL(g_kisVkInfo.m_vmaAllocator);
+        vmaDestroyAllocator(g_kisVkInfo.m_vmaAllocator);
+    }
+
+    if(g_kisVkInfo.m_device != VK_NULL_HANDLE)
+    {
+        KIS_MEM_UNREGISTER_EXTERNAL(g_kisVkInfo.m_device);
+        vkDestroyDevice(g_kisVkInfo.m_device, &g_kisVkAllocCallbacks);
+    }
+
+    KIS_DELETE(g_kisVk);
+
+    KIS_MEM_SCOPE_END(kisMemTag::Vulkan);
 }
 
 //--------------------------------------------------------------------------
@@ -1280,7 +1336,7 @@ void kisVkRender(const kisRenderParams& renderParams)
     uint32_t iImage;
     vkAcquireNextImageKHR(g_kisVkInfo.m_device, g_kisVkInfo.m_swapchain, UINT64_MAX, g_kisVkRenderContext.m_imageAvailableSemaphore, VK_NULL_HANDLE, &iImage);
 
-    kisVkFrame& frame = g_kisVkFrames[iImage];
+    kisVkFrame& frame = g_kisVk->m_frames[iImage];
 
     //
     // Cleanup previous use.
@@ -1344,11 +1400,11 @@ void kisVkRender(const kisRenderParams& renderParams)
         ubo->m_modelViewProj = projection * view * instanceTransform;
 
         frame.m_uniformBufferOffset += sizeof(kisVkUBOObjectVertexBuffer);
-        frame.m_uniformBufferOffset = kisAlignPowerOf2(g_kisVkFrames[iImage].m_uniformBufferOffset, 16);
+        frame.m_uniformBufferOffset = kisAlignPowerOf2(g_kisVk->m_frames[iImage].m_uniformBufferOffset, 16);
 
         kisVkDraw& draw = frame.m_draws.add();
         draw.m_descriptorSet = descriptorSet;
-        draw.m_iMesh = renderParams.m_instances[i].m_iMesh;
+        draw.m_iMesh = renderParams.m_instances[i].m_meshHandle.m_index;
     }
 
     KIS_VK_CHECK(vkBeginCommandBuffer(g_kisVkInfo.m_cmdBuffer, &cmdBufferBeginInfo));
@@ -1384,11 +1440,11 @@ void kisVkRender(const kisRenderParams& renderParams)
     };
     vkCmdSetScissor(g_kisVkInfo.m_cmdBuffer, 0, 1, &scissor);
 
-    for(const kisVkDraw& draw : g_kisVkFrames[iImage].m_draws)
+    for(const kisVkDraw& draw : g_kisVk->m_frames[iImage].m_draws)
     {
         vkCmdBindDescriptorSets(g_kisVkInfo.m_cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_kisVkRenderContext.m_pipelineLayout, 0, 1, &draw.m_descriptorSet, 0, nullptr);
 
-        const kisVkMesh& mesh = g_kisVkMeshes[draw.m_iMesh];
+        const kisVkMesh& mesh = g_kisVk->m_meshes[draw.m_iMesh];
 
         VkBuffer vertexBuffers[] = {mesh.m_vertexBuffer};
         VkDeviceSize offsets[] = {0};
@@ -1451,12 +1507,27 @@ uint32_t kisVkCreateMesh(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent* vertic
     const size_t vertexBufferSize = sizeof(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent) * nVertices;
     const size_t indexBufferSize = nIndices * (indexBufferType == kisIndexBufferType::U16 ? sizeof(uint16_t) : sizeof(uint32_t));
 
-    kisVkMesh& mesh = g_kisVkMeshes.add();
+    kisVkMesh& mesh = g_kisVk->m_meshes.add();
     kisVkCreateVertexBuffer(vertices, vertexBufferSize, mesh.m_vertexBuffer, mesh.m_vertexBufferAlloc);
     kisVkCreateIndexBuffer(indices, indexBufferSize, mesh.m_indexBuffer, mesh.m_indexBufferAlloc);
     mesh.m_nVertices = nVertices;
     mesh.m_nIndices = nIndices;
     mesh.m_indexType = kisVkIndexType(indexBufferType);
 
-    return g_kisVkMeshes.num() - 1;
+    return g_kisVk->m_meshes.num() - 1;
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisVkDestroyMesh(uint32_t iMesh)
+{
+    kisVkMesh& mesh = g_kisVk->m_meshes[iMesh];
+    kisVkDestroyIndexBuffer(mesh.m_indexBuffer, mesh.m_indexBufferAlloc);
+    kisVkDestroyVertexBuffer(mesh.m_vertexBuffer, mesh.m_vertexBufferAlloc);
+    mesh.m_vertexBuffer = VK_NULL_HANDLE;
+    mesh.m_vertexBufferAlloc = VK_NULL_HANDLE;
+    mesh.m_indexBuffer = VK_NULL_HANDLE;
+    mesh.m_indexBufferAlloc = VK_NULL_HANDLE;
+    mesh.m_nVertices = 0;
+    mesh.m_nIndices = 0;
 }

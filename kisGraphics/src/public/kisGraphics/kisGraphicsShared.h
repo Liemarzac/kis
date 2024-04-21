@@ -3,6 +3,11 @@
 #include <kisCore/kisCore.h>
 #include <kisCore/kisMath.h>
 
+struct kisMeshHandle
+{
+    uint32_t m_index;
+};
+
 struct kisMeshInstanceHandle
 {
     uint32_t m_index;
@@ -10,7 +15,7 @@ struct kisMeshInstanceHandle
 
 struct kisMeshInstance
 {
-    uint32_t m_iMesh;
+    kisMeshHandle m_meshHandle;
     kisMatrix4 m_orientation;
 };
 

@@ -106,10 +106,17 @@ struct kisVkFrame
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
+struct kisVk
+{
+    kisStaticArray<kisVkFrame, k_kisVkMaxNumImages> m_frames;
+    kisFixedArray<kisVkMesh, 1024> m_meshes;
+};
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+extern kisVk* g_kisVk;
 extern kisVkInfo g_kisVkInfo;
 extern VkAllocationCallbacks g_kisVkAllocCallbacks;
-extern kisStaticArray<kisVkFrame, k_kisVkMaxNumImages> g_kisVkFrames;
-extern kisFixedArray<kisVkMesh, 1024> g_kisVkMeshes;
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------

@@ -111,7 +111,7 @@ typename kisFixedHashMap<Key, Value, Capacity, HashFunc>::Iterator kisFixedHashM
         if(m_entries[iEntry].m_key == key)
         {
             // The key already exists.
-            KIS_ASSERT(false);
+            KIS_LOG_ASSERT(false, "Key already exists in the hashmap");
             break;
         }
 #endif

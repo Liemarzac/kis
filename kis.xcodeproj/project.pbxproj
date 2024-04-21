@@ -301,6 +301,7 @@
 		7A45BEBC2B2E317C008C0242 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7A5ACE712BC5E2A0006FEC53 /* rpmalloc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rpmalloc.c; path = external/rpmalloc/rpmalloc/rpmalloc.c; sourceTree = SOURCE_ROOT; };
 		7A5ACE752BC5E2BF006FEC53 /* rpmalloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rpmalloc.h; path = external/rpmalloc/rpmalloc/rpmalloc.h; sourceTree = SOURCE_ROOT; };
+		7A5ACE782BD42474006FEC53 /* kisFlagSet.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisFlagSet.h; path = src/public/kisCore/kisFlagSet.h; sourceTree = "<group>"; };
 		7A8BD5842B35F48E00A23795 /* libkisCore_macOS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libkisCore_macOS.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		7A8BD5932B35F4C000A23795 /* libkisEngine_macOS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libkisEngine_macOS.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		7A8BD5A22B35F51000A23795 /* libkisGraphics_macOS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libkisGraphics_macOS.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -511,6 +512,7 @@
 				7A36CA972B679BA800A006D8 /* kisHash.h */,
 				7A36CA982B679C2400A006D8 /* kisHash.cpp */,
 				7A36CA9C2B6B8D4500A006D8 /* kisFixedStack.h */,
+				7A5ACE782BD42474006FEC53 /* kisFlagSet.h */,
 			);
 			path = kisCore;
 			sourceTree = "<group>";

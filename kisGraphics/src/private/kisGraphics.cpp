@@ -1,7 +1,10 @@
 #include "kisGraphics.h"
 #include "kisGraphicsShared.h"
 #include "kisGraphicsPrivate.h"
+
 #include "kisVk/kisVk.h"
+
+#include "kisMem.h"
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
@@ -40,18 +43,34 @@ void kisGraphicsResize(uint32_t width, uint32_t height)
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-uint32_t kisGraphicsCreateMesh(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent* vertices, uint32_t nVertices, void* indices, uint32_t nIndices, kisIndexBufferType indexType)
+kisMeshHandle kisGraphicsCreateMesh(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent* vertices, uint32_t nVertices, void* indices, uint32_t nIndices, kisIndexBufferType indexType)
 {
-    return kisVkCreateMesh(vertices, nVertices, indices, nIndices, indexType);
+    kisMeshHandle handle = {
+        .m_index = kisVkCreateMesh(vertices, nVertices, indices, nIndices, indexType)
+    };
+
+    return handle;
 }
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-kisMeshInstanceHandle kisGraphicsCreateMeshInstance(uint32_t iMesh)
+void kisGraphicsDestroyMesh(kisMeshHandle handle)
+{
+    kisVkDestroyMesh(handle.m_index);
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+kisMeshInstanceHandle kisGraphicsAddMeshInstance(kisMeshHandle meshHandle)
 {
     kisMeshInstance& instance = g_kisMeshInstances.add();
-    instance.m_iMesh = iMesh;
-    return {g_kisMeshInstances.num() - 1};
+    instance.m_meshHandle = meshHandle;
+
+    kisMeshInstanceHandle meshInstanceHandle = {
+        .m_index = g_kisMeshInstances.num() - 1
+    };
+
+    return meshInstanceHandle;
 }
 
 //--------------------------------------------------------------------------

@@ -3,6 +3,9 @@
 #include "kisCore.h"
 #include "kisMem.h"
 
+#if defined(DEBUG)
+#include "kisStringANSIStatic.h"
+#endif
 
 template<typename T>
 class kisArray
@@ -76,24 +79,24 @@ public:
 
     //--------------------------------------------------------------------------
     //--------------------------------------------------------------------------
-    kisArray() :
-        m_elements(nullptr)
-        ,m_capacity(0)
-        ,m_nElements(0)
+    kisArray(uint32_t reserve = 0)
     {
-    }
+        if(reserve > 0)
+        {
+            m_elements = (T*)KIS_ALLOC(sizeof(T) * reserve, kisMemTag::Core, "kisArray.elements");
+        }
+        else
+        {
+            m_elements = nullptr;
+        }
 
-    kisArray(uint32_t reserve)
-    {
-        m_elements = (T*)KIS_ALLOC(sizeof(T) * reserve, "kisArray");
         m_capacity = reserve;
         m_nElements = 0;
     }
 
     ~kisArray()
     {
-        empty();
-        kisMemFree(m_elements);
+        deallocate();
     }
 
     void add(const T& elem)
@@ -118,6 +121,15 @@ public:
         }
 
         m_nElements = 0;
+    }
+
+    void deallocate()
+    {
+        empty();
+
+        KIS_FREE(m_elements);
+        m_elements = nullptr;
+        m_capacity = 0;
     }
 
     void removeUnordered(uint32_t index)
@@ -196,7 +208,7 @@ private:
 
         if(newCapacity > m_capacity)
         {
-            T* newElements = (T*)KIS_ALLOC(newCapacity * sizeof(T), "kisArray");
+            T* newElements = (T*)KIS_ALLOC(newCapacity * sizeof(T), kisMemTag::Core, "kisArray.elements");
             for(uint32_t i = 0; i < m_nElements; i++)
             {
                 newElements[i] = m_elements[i];

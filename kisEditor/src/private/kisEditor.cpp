@@ -14,7 +14,17 @@
 
 #include <float.h>
 
-kisArray<kisMeshInstanceHandle> g_kisMeshInstanceHandles;
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+struct kisEditor
+{
+    kisArray<kisMeshHandle> m_kisMeshHandles;
+    kisArray<kisMeshInstanceHandle> m_meshInstanceHandles;
+};
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+kisEditor* g_kisEditor = nullptr;
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
@@ -164,12 +174,28 @@ void kisEditorLoadScene(const char* path)
             }
         }
 
-        uint32_t iKisMesh = kisGraphicsCreateMesh(vertexBuffer.dataPointer(), vertexBuffer.num(), indexBufer.getStart(), mesh->mNumFaces * 3, sizeofIndex == sizeof(uint16_t) ? kisIndexBufferType::U16 : kisIndexBufferType::U32);
+        kisMeshHandle meshHandle = kisGraphicsCreateMesh(vertexBuffer.dataPointer(), vertexBuffer.num(), indexBufer.getStart(), mesh->mNumFaces * 3, sizeofIndex == sizeof(uint16_t) ? kisIndexBufferType::U16 : kisIndexBufferType::U32);
+        g_kisEditor->m_kisMeshHandles.add(meshHandle);
 
-        g_kisMeshInstanceHandles.add(kisGraphicsCreateMeshInstance(iKisMesh));
+        kisMeshInstanceHandle meshInstanceHandle = kisGraphicsAddMeshInstance(meshHandle);
+        g_kisEditor->m_meshInstanceHandles.add(meshInstanceHandle);
     }
 
     aiReleaseImport(scene);
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisEditorUnloadScene()
+{
+    g_kisEditor->m_meshInstanceHandles.empty();
+
+    for(kisMeshHandle meshHandle : g_kisEditor->m_kisMeshHandles)
+    {
+        kisGraphicsDestroyMesh(meshHandle);
+    }
+
+    g_kisEditor->m_kisMeshHandles.empty();
 }
 
 //--------------------------------------------------------------------------
@@ -182,6 +208,9 @@ void kisEditorInit(const kisEditorInitParams* params)
 
     kisGraphicsInit(params->m_metalLayer);
 
+    KIS_MEM_SCOPE_BEGIN(kisMemTag::Editor);
+
+    g_kisEditor = KIS_NEW(kisMemTag::Editor, "editor") kisEditor();
     kisStringANSIStatic<k_kisCoreMaxPathSize> fullyQualifiedPath;
     fullyQualifiedPath.concat("%s/%s", kisFileDataPath(), "data/editor/plane.fbx");
 
@@ -192,6 +221,13 @@ void kisEditorInit(const kisEditorInitParams* params)
 //--------------------------------------------------------------------------
 void kisEditorShutdown()
 {
+    kisEditorUnloadScene();
+
+    KIS_DELETE(g_kisEditor);
+    g_kisEditor = nullptr;
+
+    KIS_MEM_SCOPE_END(kisMemTag::Editor);
+
     kisGraphicsShutdown();
     kisCoreShutdown();
 }
@@ -206,7 +242,7 @@ void kisEditorRender()
 
     kisMatrix4 orientation = glm::rotate(kisMatrix4(1.0f), zRot, kisVec3(0.0f, 0.0f, 1.0f));
 
-    for(kisMeshInstanceHandle handle : g_kisMeshInstanceHandles)
+    for(kisMeshInstanceHandle handle : g_kisEditor->m_meshInstanceHandles)
     {
         kisMeshInstance& instance = kisGraphicsGetMeshInstance(handle);
         instance.m_orientation = orientation;

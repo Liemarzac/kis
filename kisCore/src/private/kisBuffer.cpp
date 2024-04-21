@@ -6,7 +6,7 @@
 //--------------------------------------------------------------------------
 kisBuffer::kisBuffer(size_t size, uint32_t alignment)
 {
-    m_data = (uint8_t*)KIS_ALIGNED_ALLOC(size, alignment, "kisBuffer");
+    m_data = (uint8_t*)KIS_ALIGNED_ALLOC(size, alignment, kisMemTag::Core, "kisBuffer.data");
     m_ptr = m_data;
     m_size = size;
 }

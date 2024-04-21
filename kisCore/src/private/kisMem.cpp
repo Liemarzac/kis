@@ -1,5 +1,6 @@
 #include "kisFixedArray.h"
 #include "kisFixedHashMap.h"
+#include "kisFlagSet.h"
 #include "kisHash.h"
 #include "kisMem.h"
 #include "kisStringANSIStatic.h"
@@ -8,23 +9,24 @@
 #include <cstdlib>
 
 #if defined(KIS_DEBUG)
-static const uint32_t k_kisMemMarkersMaxNumUInt64 = 2;
-static const uint32_t k_kisMemMarkersMaxNum = 64 * k_kisMemMarkersMaxNumUInt64;
+// Follow enum kisMemTag in kisMem.h
+static const char* s_kisMemTagNames[] = {
+    "App",
+    "Core",
+    "Editor",
+    "Vulkan"
+};
 #endif
 
 #if defined(KIS_DEBUG)
-struct kisMemScopeBitfield
-{
-    uint64_t m_bitfield[k_kisMemMarkersMaxNumUInt64];
-};
-
 struct kisMemEntry
 {
     const void* m_pointer;
-    kisStringANSIStatic<32> m_name;
-    kisMemScopeBitfield m_memScopeBitfield;
+    kisStringANSIStatic<kisMemEntryMaxNameLength> m_name;
+    kisMemTag m_tag;
     const char* m_fileName;
     uint32_t m_line;
+    uint32_t m_id;
 };
 #endif
 
@@ -33,22 +35,28 @@ thread_local bool tl_bKisMemThreadInitialized = false;
 
 #if defined(KIS_DEBUG)
 static kisFixedHashMap<const void*, kisMemEntry, 1 << 20, kisHashPointerAsUInt32> s_kisMemEntries;
-static kisFixedArray<kisStringANSIStatic<32>, k_kisMemMarkersMaxNum> s_kisScopeMarkerNames;
-static kisMemScopeBitfield s_kisMemScopeBitfield;
+static kisFlagSet<kisMemTag, uint64_t> s_kisMemScopeFlagSet;
 #endif
 
 #if defined(KIS_DEBUG)
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void kisMemRegisterEntry(const void* p, const char* name, const char* fileName, uint32_t line)
+void kisMemRegisterEntry(const void* p, kisMemTag tag, const char* name, const char* fileName, uint32_t line)
 {
+    KIS_LOG_ASSERT(s_kisMemScopeFlagSet.isSet(tag) == true, "Mem scope for tag %s has not yet begun", s_kisMemTagNames[(uint32_t)tag]);
+
+    static uint32_t s_iAlloc = 0;
+
     auto itr = s_kisMemEntries.add(p);
     kisMemEntry& memEntry = itr.getValue();
     memEntry.m_pointer = p;
+    memEntry.m_tag = tag;
     memEntry.m_name = name;
-    memEntry.m_memScopeBitfield = s_kisMemScopeBitfield;
     memEntry.m_fileName = fileName;
     memEntry.m_line = line;
+    memEntry.m_id = s_iAlloc;
+
+    s_iAlloc++;
 }
 
 //--------------------------------------------------------------------------
@@ -60,53 +68,34 @@ void kisMemUnregisterEntry(const void* p)
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-uint32_t kisMemScopeFindOrCreate(const char* name)
+void kisMemScopeBegin(kisMemTag tag)
 {
-    const uint32_t nNames = s_kisScopeMarkerNames.num();
-    for(uint32_t i = 0; i < nNames; i++)
-    {
-        if(s_kisScopeMarkerNames[i].len() == 0)
-        {
-            // Free slot found
-            break;
-        }
+    KIS_LOG_ASSERT(s_kisMemScopeFlagSet.isSet(tag) == false, "Mem scope for tag %s is already begun", s_kisMemTagNames[(uint32_t)tag]);
 
-        if(s_kisScopeMarkerNames[i] == name)
-        {
-            return i;
-        }
-    }
-
-    s_kisScopeMarkerNames.add() = name;
-    return s_kisScopeMarkerNames.num() - 1;
+    s_kisMemScopeFlagSet.set(tag);
 }
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void kisMemScopeStart(uint32_t index)
+void kisMemScopeEnd(kisMemTag tag)
 {
-    uint32_t iUInt64 = index / 64;
-    uint32_t iBit = index % 64;
-    KIS_LOG_ASSERT((s_kisMemScopeBitfield.m_bitfield[iUInt64] & (1ull << iBit)) == 0, "Mem scope %s is already started", s_kisScopeMarkerNames[index].c_str());
+    KIS_LOG_ASSERT(s_kisMemScopeFlagSet.isSet(tag) == true, "Mem scope for tag %s has not begun yet", s_kisMemTagNames[(uint32_t)tag]);
 
-    s_kisMemScopeBitfield.m_bitfield[iUInt64] |= (1ull << iBit);
-}
+    s_kisMemScopeFlagSet.remove(tag);
 
-//--------------------------------------------------------------------------
-//--------------------------------------------------------------------------
-void kisMemScopeEnd(uint32_t index)
-{
-    uint32_t iUInt64 = index / 64;
-    uint32_t iBit = index % 64;
-    KIS_LOG_ASSERT((s_kisMemScopeBitfield.m_bitfield[iUInt64] & (1ull << iBit)) != 0, "Mem scope %s is ended before being started", s_kisScopeMarkerNames[index].c_str());
-
-    s_kisMemScopeBitfield.m_bitfield[iUInt64] &= ~(1ull << iBit);
-
+    bool bFoundScopeLeaks = false;
     for(auto itr = s_kisMemEntries.begin(); itr.isValid(); ++itr)
     {
         kisMemEntry& memEntry = itr.getValue();
-        KIS_LOG_ASSERT((memEntry.m_memScopeBitfield.m_bitfield[iUInt64] & (1ull << iBit)) == 0, "Mem entry [%s] allocated within mem scope [%s] was not freed before the end of the scope.\n%s:%u", memEntry.m_name.c_str(), s_kisScopeMarkerNames[(iUInt64 * 64) + iBit], memEntry.m_fileName, memEntry.m_line);
+        if(memEntry.m_tag == tag)
+        {
+            kisLogError("Mem entry [%s] with id [%u] allocated with mem tag [%s] was not freed before the end of the scope.\n%s:%u", memEntry.m_name.c_str(), memEntry.m_id, s_kisMemTagNames[(uint32_t)tag], memEntry.m_fileName, memEntry.m_line);
+
+            bFoundScopeLeaks = true;
+        }
     }
+
+    KIS_ASSERT(bFoundScopeLeaks == false);
 }
 #endif
 
@@ -115,10 +104,6 @@ void kisMemScopeEnd(uint32_t index)
 void kisMemInit()
 {
     rpmalloc_initialize();
-
-    #if defined(KIS_DEBUG)
-    memset(&s_kisMemScopeBitfield.m_bitfield, 0, sizeof(s_kisMemScopeBitfield.m_bitfield));
-    #endif
 
     s_bKisMemInitialized = true;
 }
@@ -130,15 +115,9 @@ void kisMemShutdown()
     s_bKisMemInitialized = false;
 
     #if defined(KIS_DEBUG)
-    for(uint32_t iUInt64 = 0; iUInt64 < KIS_ARRAY_COUNT(s_kisMemScopeBitfield.m_bitfield); iUInt64++)
+    for(uint32_t iTag = 0; iTag < (uint32_t)kisMemTag::Count; iTag++)
     {
-        for(uint32_t iBit = 0; iBit < 64; iBit++)
-        {
-            if((s_kisMemScopeBitfield.m_bitfield[iUInt64] & (1ull << iBit)) != 0)
-            {
-                KIS_LOG_ASSERT(false, "Mem scope was never ended: %s", s_kisScopeMarkerNames[(iUInt64 * 64) + iBit].c_str());
-            }
-        }
+        KIS_LOG_ASSERT(s_kisMemScopeFlagSet.isSet((kisMemTag)iTag) == false, "Mem scope %s was never ended", s_kisMemTagNames[iTag]);
     }
     #endif
 
@@ -164,7 +143,7 @@ void kisMemThreadShutdown()
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 #if defined(KIS_DEBUG)
-void* kisMemAlloc(size_t size, const char* name, const char* fileName, uint32_t line, uint32_t alignment)
+void* kisMemAlloc(size_t size, kisMemTag tag, const char* name, const char* fileName, uint32_t line, uint32_t alignment)
 #else
 void* kisMemAlloc(size_t size, uint32_t alignment)
 #endif
@@ -174,10 +153,36 @@ void* kisMemAlloc(size_t size, uint32_t alignment)
     void* p = rpmemalign(alignment, size);
 
     #if defined(KIS_DEBUG)
-    kisMemRegisterEntry(p, name, fileName, line);
+    kisMemRegisterEntry(p, tag, name, fileName, line);
     #endif
 
     return p;
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+#if defined(KIS_DEBUG)
+void* kisMemRealloc(void* oldPointer, size_t size, const char* fileName, uint32_t line)
+#else
+void* kisMemRealloc(void* oldPointer, size_t size)
+#endif
+{
+    KIS_ASSERT(s_bKisMemInitialized == true);
+    KIS_ASSERT(tl_bKisMemThreadInitialized == true);
+
+    #if defined(KIS_DEBUG)
+    auto itr = s_kisMemEntries.find(oldPointer);
+    kisMemEntry oldMemEntry = itr.getValue();
+    kisMemUnregisterEntry(oldPointer);
+    #endif
+
+    void* newPointer = rprealloc(oldPointer, size);
+
+    #if defined(KIS_DEBUG)
+    kisMemRegisterEntry(newPointer, oldMemEntry.m_tag, oldMemEntry.m_name.c_str(), fileName, line);
+    #endif
+
+    return newPointer;
 }
 
 //--------------------------------------------------------------------------
@@ -192,4 +197,21 @@ void kisMemFree(void* p)
     #endif
 
     rpfree(p);
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+#if defined(KIS_DEBUG)
+void* operator new(size_t size, kisMemTag tag, const char* name, const char* fileName, uint32_t line, uint32_t alignment)
+#else
+void* operator new(size_t size, bool, uint32_t alignment)
+#endif
+{
+    #if defined(KIS_DEBUG)
+    void* p = kisMemAlloc(size, tag, name, fileName, line, alignment);
+    #else
+    void* p = kisMemAlloc(size, alignment)
+    #endif
+
+    return p;
 }

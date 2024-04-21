@@ -16,13 +16,14 @@ void kisGraphicsResize(uint32_t width, uint32_t height);
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-uint32_t kisGraphicsCreateMesh(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent* vertices, uint32_t nVertices, void* indices, uint32_t nIndices, kisIndexBufferType indexType);
+kisMeshHandle kisGraphicsCreateMesh(kisVertex_XYZ_UV_Color_Normal_Tangent_Bitangent* vertices, uint32_t nVertices, void* indices, uint32_t nIndices, kisIndexBufferType indexType);
+void kisGraphicsDestroyMesh(kisMeshHandle meshHandle);
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-kisMeshInstanceHandle kisGraphicsCreateMeshInstance(uint32_t iMesh);
+kisMeshInstanceHandle kisGraphicsAddMeshInstance(kisMeshHandle meshHandle);
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-kisMeshInstance& kisGraphicsGetMeshInstance(kisMeshInstanceHandle handle);
+kisMeshInstance& kisGraphicsGetMeshInstance(kisMeshInstanceHandle meshInstanceHandle);
 

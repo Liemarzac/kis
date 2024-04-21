@@ -36,15 +36,16 @@ void kisVkCopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size)
         .commandPool = g_kisVkInfo.m_cmdPool,
         .commandBufferCount = 1,
     };
-    
+
     VkCommandBuffer cmdBuffer;
     vkAllocateCommandBuffers(g_kisVkInfo.m_device, &cmdBufferAllocInfo, &cmdBuffer);
-    
+    KIS_MEM_REGISTER_EXTERNAL(cmdBuffer, kisMemTag::Vulkan, "");
+
     const VkCommandBufferBeginInfo beginInfo = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
         .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
     };
-    
+
     vkBeginCommandBuffer(cmdBuffer, &beginInfo);
 
     VkBufferCopy copyRegion = {
@@ -66,9 +67,12 @@ void kisVkCopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size)
     vkQueueSubmit(g_kisVkInfo.m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(g_kisVkInfo.m_graphicsQueue);
 
+    KIS_MEM_UNREGISTER_EXTERNAL(cmdBuffer);
     vkFreeCommandBuffers(g_kisVkInfo.m_device, g_kisVkInfo.m_cmdPool, 1, &cmdBuffer);
 }
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 void kisVkCreateBuffer(void* data, VkDeviceSize size, VkBufferUsageFlags usage, VkBuffer& buffer, VmaAllocation& alloc)
 {
     // Create staging buffer.
@@ -89,6 +93,7 @@ void kisVkCreateBuffer(void* data, VkDeviceSize size, VkBufferUsageFlags usage, 
     };
 
     vmaCreateBuffer(g_kisVkInfo.m_vmaAllocator, &stagingBufferCreateInfo, &allocCreateInfo, &stagingBuffer, &stagingBufferAlloc, &stagingBufferAllocInfo);
+    KIS_MEM_REGISTER_EXTERNAL(stagingBuffer, kisMemTag::Vulkan, "vulkan_vma_staging_buffer");
 
     // Map vertex buffer.
     {
@@ -114,10 +119,20 @@ void kisVkCreateBuffer(void* data, VkDeviceSize size, VkBufferUsageFlags usage, 
     };
 
     vmaCreateBuffer(g_kisVkInfo.m_vmaAllocator, &deviceBufferCreateInfo, &deviceAllocCreateInfo, &buffer, &alloc, &deviceBufferAllocationInfo);
+    KIS_MEM_REGISTER_EXTERNAL(buffer, kisMemTag::Vulkan, "vulkan_vma_device_buffer");
 
     kisVkCopyBuffer(stagingBuffer, buffer, size);
 
+    KIS_MEM_UNREGISTER_EXTERNAL(stagingBuffer);
     vmaDestroyBuffer(g_kisVkInfo.m_vmaAllocator, stagingBuffer, stagingBufferAlloc);
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisVkDestroyBuffer(VkBuffer buffer, VmaAllocation alloc)
+{
+    KIS_MEM_UNREGISTER_EXTERNAL(buffer);
+    vmaDestroyBuffer(g_kisVkInfo.m_vmaAllocator, buffer, alloc);
 }
 
 //--------------------------------------------------------------------------
@@ -129,8 +144,22 @@ void kisVkCreateVertexBuffer(void* vertices, VkDeviceSize size, VkBuffer& buffer
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
+void kisVkDestroyVertexBuffer(VkBuffer buffer, VmaAllocation alloc)
+{
+    kisVkDestroyBuffer(buffer, alloc);
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 void kisVkCreateIndexBuffer(void* indices, VkDeviceSize size, VkBuffer& buffer, VmaAllocation& alloc)
 {
     kisVkCreateBuffer(indices, size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, buffer, alloc);
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisVkDestroyIndexBuffer(VkBuffer buffer, VmaAllocation alloc)
+{
+    kisVkDestroyBuffer(buffer, alloc);
 }
 
