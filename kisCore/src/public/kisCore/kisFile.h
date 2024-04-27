@@ -1,6 +1,10 @@
 #pragma once
 
+#include "kisStringANSIStatic.h"
+
 #include <stddef.h>
+
+typedef kisStringANSIStatic<k_kisCoreMaxPathSize> kisFilePathString;
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------

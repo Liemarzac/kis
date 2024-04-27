@@ -679,11 +679,11 @@ void kisVKLoadAssets()
         g_kisVk->m_frames[i].m_uniformBufferSize = uniformBufferSize;
     }
 
-    kisFileBuffer vsBuffer = kisFileBufferCreate("data/triangle/triangle_vert.spv");
+    kisFileBuffer vsBuffer = kisFileBufferCreate("triangle/triangle_vert.spv");
     g_kisVkRenderContext.m_vsShader = kisVkCreateShader(vsBuffer);
     kisFileBufferDestroy(vsBuffer);
 
-    kisFileBuffer psBuffer = kisFileBufferCreate("data/triangle/triangle_frag.spv");
+    kisFileBuffer psBuffer = kisFileBufferCreate("triangle/triangle_frag.spv");
     g_kisVkRenderContext.m_psShader = kisVkCreateShader(psBuffer);
     kisFileBufferDestroy(psBuffer);
 
@@ -1440,7 +1440,7 @@ void kisVkRender(const kisRenderParams& renderParams)
     };
     vkCmdSetScissor(g_kisVkInfo.m_cmdBuffer, 0, 1, &scissor);
 
-    for(const kisVkDraw& draw : g_kisVk->m_frames[iImage].m_draws)
+    for(const kisVkDraw& draw : frame.m_draws)
     {
         vkCmdBindDescriptorSets(g_kisVkInfo.m_cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_kisVkRenderContext.m_pipelineLayout, 0, 1, &draw.m_descriptorSet, 0, nullptr);
 
@@ -1530,4 +1530,163 @@ void kisVkDestroyMesh(uint32_t iMesh)
     mesh.m_indexBufferAlloc = VK_NULL_HANDLE;
     mesh.m_nVertices = 0;
     mesh.m_nIndices = 0;
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+uint32_t kisVkCreateTexture2D(const void* data, size_t size, uint32_t width, uint32_t height, uint32_t mipLevels, kisTextureFormat format)
+{
+    // Create staging buffer.
+    VkBuffer stagingBuffer;
+    VmaAllocation stagingBufferAlloc;
+    VmaAllocationInfo stagingBufferAllocInfo;
+    
+    const VkBufferCreateInfo stagingBufferCreateInfo = {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .size = size,
+        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+    };
+    
+    const VmaAllocationCreateInfo allocCreateInfo = {
+        .usage = VMA_MEMORY_USAGE_AUTO,
+        .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+    };
+    
+    vmaCreateBuffer(g_kisVkInfo.m_vmaAllocator, &stagingBufferCreateInfo, &allocCreateInfo, &stagingBuffer, &stagingBufferAlloc, &stagingBufferAllocInfo);
+    KIS_MEM_REGISTER_EXTERNAL(stagingBuffer, kisMemTag::Vulkan, "vulkan_vma_staging_buffer");
+    KIS_MEM_REGISTER_EXTERNAL(stagingBufferAlloc, kisMemTag::Vulkan, "vulkan_vma_staging_buffer_alloc");
+
+    // Map vertex buffer.
+    {
+        void* mappedBuffer;
+        vmaMapMemory(g_kisVkInfo.m_vmaAllocator, stagingBufferAlloc, &mappedBuffer);
+        memcpy(mappedBuffer, data, size);
+        vmaUnmapMemory(g_kisVkInfo.m_vmaAllocator, stagingBufferAlloc);
+    }
+
+    const VkFormat vkFormat = kisVkImageFormat(format);
+
+    const VkImageCreateInfo imageCreateInfo = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .imageType = VK_IMAGE_TYPE_2D,
+        .extent.width = width,
+        .extent.height = height,
+        .extent.depth = 1,
+        .mipLevels = mipLevels,
+        .arrayLayers = 1,
+        .format = vkFormat,
+        .tiling = VK_IMAGE_TILING_OPTIMAL,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .flags = 0,
+    };
+    
+    const VmaAllocationCreateInfo imageAllocCreateInfo = {
+        .usage = VMA_MEMORY_USAGE_GPU_ONLY,
+    };
+
+    kisVkImage& image = g_kisVk->m_images.add();
+    VmaAllocationInfo imageAllocInfo;
+    KIS_VK_CHECK(vmaCreateImage(g_kisVkInfo.m_vmaAllocator, &imageCreateInfo, &imageAllocCreateInfo, &image.m_image, &image.m_alloc, &imageAllocInfo));
+    KIS_MEM_REGISTER_EXTERNAL(image.m_image, kisMemTag::Vulkan, "vukan_image");
+    KIS_MEM_REGISTER_EXTERNAL(image.m_alloc, kisMemTag::Vulkan, "vulkan_image_alloc");
+
+    const VkCommandBufferBeginInfo cmdBufferBeginInfo = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .pInheritanceInfo = nullptr,
+    };
+    vkBeginCommandBuffer(g_kisVkInfo.m_cmdBuffer, &cmdBufferBeginInfo);
+
+    VkImageMemoryBarrier imgMemBarrier = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+        .subresourceRange.baseMipLevel = 0,
+        .subresourceRange.levelCount = mipLevels,
+        .subresourceRange.baseArrayLayer = 0,
+        .subresourceRange.layerCount = 1,
+        .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        .image = image.m_image,
+        .srcAccessMask = 0,
+        .dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+    };
+
+    vkCmdPipelineBarrier(g_kisVkInfo.m_cmdBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imgMemBarrier);
+
+    VkBufferImageCopy copyRegions[16];
+    VkDeviceSize bufferOffset = 0;
+    uint32_t mipWidth = width;
+    uint32_t mipHeight = height;
+    for(uint32_t iLevel = 0; iLevel < mipLevels; iLevel++)
+    {
+        KIS_ASSERT(iLevel < KIS_ARRAY_COUNT(copyRegions));
+
+        const size_t mipSize = kisGraphicsImageSize2D(mipWidth, mipHeight, format);
+        KIS_ASSERT(bufferOffset + mipSize <= size);
+
+        copyRegions[iLevel] = {
+            .bufferOffset = bufferOffset,
+            .bufferRowLength = 0,
+            .bufferImageHeight = 0,
+            .imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .imageSubresource.layerCount = 1,
+            .imageExtent.width = mipWidth,
+            .imageExtent.height = mipHeight,
+            .imageExtent.depth = 1,
+        };
+
+        bufferOffset += mipSize;
+        mipWidth >>= 1;
+        mipHeight >>= 1;
+    }
+
+    vkCmdCopyBufferToImage(g_kisVkInfo.m_cmdBuffer, stagingBuffer, image.m_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels, copyRegions);
+
+    imgMemBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    imgMemBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imgMemBarrier.image = image.m_image;
+    imgMemBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    imgMemBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+    vkCmdPipelineBarrier(g_kisVkInfo.m_cmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imgMemBarrier);
+
+    vkEndCommandBuffer(g_kisVkInfo.m_cmdBuffer);
+
+    const VkSubmitInfo submitInfo = {
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .waitSemaphoreCount = 0,
+        .pWaitSemaphores = nullptr,
+        .pWaitDstStageMask = nullptr,
+        .commandBufferCount = 1,
+        .pCommandBuffers = &g_kisVkInfo.m_cmdBuffer,
+        .signalSemaphoreCount = 0,
+        .pSignalSemaphores = nullptr,
+    };
+
+    KIS_VK_CHECK(vkQueueSubmit(g_kisVkInfo.m_graphicsQueue, 1, &submitInfo, g_kisVkRenderContext.m_queueExecutedFence));
+    vkDeviceWaitIdle(g_kisVkInfo.m_device );
+
+    KIS_MEM_UNREGISTER_EXTERNAL(stagingBufferAlloc);
+    KIS_MEM_UNREGISTER_EXTERNAL(stagingBuffer);
+    vmaDestroyBuffer(g_kisVkInfo.m_vmaAllocator, stagingBuffer, stagingBufferAlloc);
+
+    return g_kisVk->m_images.num() - 1;
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisVkDestroyTexture2D(uint32_t iImage)
+{
+    kisVkImage& image = g_kisVk->m_images[iImage];
+
+    KIS_MEM_UNREGISTER_EXTERNAL(image.m_alloc);
+    KIS_MEM_UNREGISTER_EXTERNAL(image.m_image);
+    vmaDestroyImage(g_kisVkInfo.m_vmaAllocator, image.m_image, image.m_alloc);
 }

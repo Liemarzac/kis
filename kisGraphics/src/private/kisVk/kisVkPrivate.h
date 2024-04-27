@@ -84,6 +84,14 @@ struct kisVkMesh
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
+struct kisVkImage
+{
+    VkImage m_image;
+    VmaAllocation m_alloc;
+};
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 struct kisVkDraw
 {
     VkDescriptorSet m_descriptorSet;
@@ -110,6 +118,7 @@ struct kisVk
 {
     kisStaticArray<kisVkFrame, k_kisVkMaxNumImages> m_frames;
     kisFixedArray<kisVkMesh, 1024> m_meshes;
+    kisFixedArray<kisVkImage, 1024> m_images;
 };
 
 //--------------------------------------------------------------------------
@@ -121,3 +130,11 @@ extern VkAllocationCallbacks g_kisVkAllocCallbacks;
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 VkIndexType kisVkIndexType(kisIndexBufferType type);
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+size_t kisVkImageSize2D(uint32_t width, uint32_t height, VkFormat format);
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+VkFormat kisVkImageFormat(kisTextureFormat format);

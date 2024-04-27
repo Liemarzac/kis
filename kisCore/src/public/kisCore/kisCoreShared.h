@@ -26,6 +26,10 @@ void kisLogTableFooter();
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
+bool kisBitscanReverse(uint32_t& index, uint32_t mask);
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 #define KIS_DEBUG
 #if defined(KIS_DEBUG)
     #define KIS_ASSERT(CONDITION) if((CONDITION) == false){kisLogError("Assertion Failed"); raise(SIGTRAP);}
@@ -76,3 +80,17 @@ T kisAlignPowerOf2(T val, uint32_t align)
     KIS_CHECK(align > 0 && kisIsPowerOf2(align));
     return (val + (align - 1)) & (~(align - 1));
 }
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+template<typename T>
+bool kisLog2(T val_in, T& val_out)
+{
+    if(kisIsPowerOf2(val_in) == false)
+    {
+        return false;
+    }
+
+    return kisBitscanReverse(val_out, val_in);
+}
+

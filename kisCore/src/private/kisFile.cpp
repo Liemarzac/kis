@@ -1,7 +1,6 @@
 #include "kisCore.h"
 #include "kisFile.h"
 #include "kisMem.h"
-#include "kisStringANSIStatic.h"
 
 #include <filesystem>
 #include <fstream>
@@ -35,7 +34,7 @@ void kisFileOutputFilesystem()
 //--------------------------------------------------------------------------
 kisFileBuffer kisFileBufferCreate(const char* path)
 {
-    kisStringANSIStatic<k_kisCoreMaxPathSize> fullyQualifiedPath;
+    kisFilePathString fullyQualifiedPath;
     fullyQualifiedPath.concat("%s/%s", g_kisFileDataPath, path);
 
     kisFileBuffer fileBuffer;

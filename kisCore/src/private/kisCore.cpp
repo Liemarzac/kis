@@ -8,7 +8,7 @@
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-extern char g_kisFileDataPath[k_kisCoreMaxPathSize];
+extern kisFilePathString g_kisFileDataPath;
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
@@ -19,7 +19,8 @@ void kisCoreInit(const kisCoreInitParams& params)
 
     KIS_MEM_SCOPE_BEGIN(kisMemTag::Core);
 
-    kisCoreStringCopy(g_kisFileDataPath, sizeof(g_kisFileDataPath), params.m_dataPath);
+    g_kisFileDataPath.concat("%s/data", params.m_dataPath);
+
     kisFileOutputFilesystem();
 }
 
@@ -127,4 +128,28 @@ void kisLogTableFooter()
 {
     kisLogLine("|-------------------------------");
     kisLogLine("");
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+bool kisBitscanReverse(uint32_t& index, uint32_t mask)
+{
+    #if defined(KIS_BITSCAN_INTRISIC)
+    return _BitScanReverse(&index, mask);
+    #else
+    uint32_t nShift = 0;
+    while(mask != 0)
+    {
+        mask >>= 1;
+        nShift++;
+    }
+
+    if(nShift > 0)
+    {
+        index = nShift - 1;
+        return true;
+    }
+
+    return false;
+    #endif
 }

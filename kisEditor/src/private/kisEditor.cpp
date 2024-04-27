@@ -5,6 +5,7 @@
 #include <kisCore/kisArray.h>
 #include <kisCore/kisBuffer.h>
 #include <kisCore/kisFile.h>
+#include <kisCore/kisFixedArray.h>
 #include <kisCore/kisTime.h>
 #include <kisGraphics/kisGraphics.h>
 
@@ -18,8 +19,9 @@
 //--------------------------------------------------------------------------
 struct kisEditor
 {
-    kisArray<kisMeshHandle> m_kisMeshHandles;
+    kisArray<kisMeshHandle> m_meshHandles;
     kisArray<kisMeshInstanceHandle> m_meshInstanceHandles;
+    kisArray<kisTextureHandle> m_textureHandles;
 };
 
 //--------------------------------------------------------------------------
@@ -30,7 +32,10 @@ kisEditor* g_kisEditor = nullptr;
 //--------------------------------------------------------------------------
 void kisEditorLoadScene(const char* path)
 {
-    const aiScene* scene = aiImportFile(path,
+    kisFilePathString fullyQualifiedPath = kisFileDataPath();
+    fullyQualifiedPath.concat("/%s", path);
+
+    const aiScene* scene = aiImportFile(fullyQualifiedPath.c_str(),
                              aiProcess_CalcTangentSpace      |
                              aiProcess_Triangulate           |
                              aiProcess_JoinIdenticalVertices |
@@ -174,8 +179,56 @@ void kisEditorLoadScene(const char* path)
             }
         }
 
+        // Populate material content..
+        for(size_t iMaterial = 0; iMaterial < scene->mNumMaterials; iMaterial++)
+        {
+            const aiMaterial* material = scene->mMaterials[iMaterial];
+            aiString aipath;
+
+            if(material->GetTextureCount(aiTextureType_DIFFUSE) > 0)
+            {
+                if(material->GetTexture(aiTextureType_DIFFUSE, 0, &aipath, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS)
+                {
+                    kisFilePathString texturePath = path;
+                    int iLastSlash = texturePath.lastOccurenceOf("/");
+                    texturePath.substring(0, iLastSlash + 1);
+                    texturePath.concat(aipath.C_Str());
+
+                    kisFileBuffer textureFileBuffer = kisFileBufferCreate(texturePath.c_str());
+                    kisDDSFileInfo ddsFileInfo;
+                    if(kisGraphicsGetDDSFileInfo(textureFileBuffer.m_data, textureFileBuffer.m_size, ddsFileInfo) == true)
+                    {
+                        KIS_LOG_ASSERT(ddsFileInfo.m_width >= 4 && ddsFileInfo.m_height >= 4, "BC texture width and height must be at least 4 pixels");
+                        const void* textureData = (uint8_t*)textureFileBuffer.m_data + ddsFileInfo.m_dataOffset;
+                        const size_t textureSize = textureFileBuffer.m_size - ddsFileInfo.m_dataOffset;
+
+                        uint32_t widthLog2 = 0;
+                        uint32_t heightLog2 = 0;
+                        kisLog2(ddsFileInfo.m_width, widthLog2);
+                        kisLog2(ddsFileInfo.m_height, heightLog2);
+
+                        // Discard the 2 mip levels below 4 pixels wide.
+                        widthLog2 -= 2;
+                        heightLog2 -= 2;
+
+                        uint32_t nMipsToUse = kisMin(widthLog2, heightLog2);
+                        nMipsToUse = kisMin(nMipsToUse, ddsFileInfo.m_mipMapCount);
+
+                        kisTextureHandle textureHandle = kisGraphicsCreateTexture2D(textureData, textureSize, ddsFileInfo.m_width, ddsFileInfo.m_height, nMipsToUse, ddsFileInfo.m_format);
+                        g_kisEditor->m_textureHandles.add(textureHandle);
+                    }
+                    else
+                    {
+                        KIS_LOG_ASSERT(false, "Could not read ddc file %s", texturePath.c_str());
+                    }
+
+                    kisFileBufferDestroy(textureFileBuffer);
+                }
+            }
+        }
+
         kisMeshHandle meshHandle = kisGraphicsCreateMesh(vertexBuffer.dataPointer(), vertexBuffer.num(), indexBufer.getStart(), mesh->mNumFaces * 3, sizeofIndex == sizeof(uint16_t) ? kisIndexBufferType::U16 : kisIndexBufferType::U32);
-        g_kisEditor->m_kisMeshHandles.add(meshHandle);
+        g_kisEditor->m_meshHandles.add(meshHandle);
 
         kisMeshInstanceHandle meshInstanceHandle = kisGraphicsAddMeshInstance(meshHandle);
         g_kisEditor->m_meshInstanceHandles.add(meshInstanceHandle);
@@ -190,12 +243,17 @@ void kisEditorUnloadScene()
 {
     g_kisEditor->m_meshInstanceHandles.empty();
 
-    for(kisMeshHandle meshHandle : g_kisEditor->m_kisMeshHandles)
+    for(kisMeshHandle meshHandle : g_kisEditor->m_meshHandles)
     {
         kisGraphicsDestroyMesh(meshHandle);
     }
 
-    g_kisEditor->m_kisMeshHandles.empty();
+    for(kisTextureHandle textureHandle : g_kisEditor->m_textureHandles)
+    {
+        kisGraphicsDestroyTexture(textureHandle);
+    }
+
+    g_kisEditor->m_meshHandles.empty();
 }
 
 //--------------------------------------------------------------------------
@@ -211,10 +269,8 @@ void kisEditorInit(const kisEditorInitParams* params)
     KIS_MEM_SCOPE_BEGIN(kisMemTag::Editor);
 
     g_kisEditor = KIS_NEW(kisMemTag::Editor, "editor") kisEditor();
-    kisStringANSIStatic<k_kisCoreMaxPathSize> fullyQualifiedPath;
-    fullyQualifiedPath.concat("%s/%s", kisFileDataPath(), "data/editor/plane.fbx");
-
-    kisEditorLoadScene(fullyQualifiedPath.c_str());
+    kisFilePathString path = "editor/plane.fbx";
+    kisEditorLoadScene(path.c_str());
 }
 
 //--------------------------------------------------------------------------
