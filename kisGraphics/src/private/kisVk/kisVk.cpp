@@ -1671,6 +1671,47 @@ uint32_t kisVkCreateTexture2D(const void* data, size_t size, uint32_t width, uin
     };
 
     KIS_VK_CHECK(vkQueueSubmit(g_kisVkInfo.m_graphicsQueue, 1, &submitInfo, g_kisVkRenderContext.m_queueExecutedFence));
+
+    //
+    // Create image sampler
+
+    VkSamplerCreateInfo samplerCreateInfo = {};
+    samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerCreateInfo.magFilter = VK_FILTER_LINEAR;
+    samplerCreateInfo.minFilter = VK_FILTER_LINEAR;
+    samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerCreateInfo.mipLodBias = 0.0f;
+    samplerCreateInfo.compareOp = VK_COMPARE_OP_NEVER;
+    samplerCreateInfo.minLod = 0.0f;
+    samplerCreateInfo.maxLod = (float)mipLevels;
+    samplerCreateInfo.maxAnisotropy = g_kisVkInfo.m_physicalDeviceProperties.limits.maxSamplerAnisotropy;
+    samplerCreateInfo.anisotropyEnable = VK_TRUE;
+    samplerCreateInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+
+    KIS_VK_CHECK(vkCreateSampler(g_kisVkInfo.m_device, &samplerCreateInfo, &g_kisVkAllocCallbacks, &image.m_sampler));
+    KIS_MEM_REGISTER_EXTERNAL(image.m_sampler, kisMemTag::Vulkan, "image_sampler");
+
+    //
+    // Create image view
+    //
+
+    VkImageViewCreateInfo viewCreateInfo = {};
+    viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewCreateInfo.format = vkFormat;
+    viewCreateInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
+    viewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewCreateInfo.subresourceRange.baseMipLevel = 0;
+    viewCreateInfo.subresourceRange.baseArrayLayer = 0;
+    viewCreateInfo.subresourceRange.layerCount = 1;
+    viewCreateInfo.subresourceRange.levelCount = mipLevels;
+    viewCreateInfo.image = image.m_image;
+    KIS_VK_CHECK(vkCreateImageView(g_kisVkInfo.m_device, &viewCreateInfo, &g_kisVkAllocCallbacks, &image.m_view) != VK_SUCCESS)
+    KIS_MEM_REGISTER_EXTERNAL(image.m_view, kisMemTag::Vulkan, "image_view");
+
     vkDeviceWaitIdle(g_kisVkInfo.m_device );
 
     KIS_MEM_UNREGISTER_EXTERNAL(stagingBufferAlloc);
@@ -1685,6 +1726,12 @@ uint32_t kisVkCreateTexture2D(const void* data, size_t size, uint32_t width, uin
 void kisVkDestroyTexture2D(uint32_t iImage)
 {
     kisVkImage& image = g_kisVk->m_images[iImage];
+
+    KIS_MEM_UNREGISTER_EXTERNAL(image.m_view);
+    vkDestroyImageView(g_kisVkInfo.m_device, image.m_view, &g_kisVkAllocCallbacks);
+
+    KIS_MEM_UNREGISTER_EXTERNAL(image.m_sampler);
+    vkDestroySampler(g_kisVkInfo.m_device, image.m_sampler, &g_kisVkAllocCallbacks);
 
     KIS_MEM_UNREGISTER_EXTERNAL(image.m_alloc);
     KIS_MEM_UNREGISTER_EXTERNAL(image.m_image);

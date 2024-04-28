@@ -88,6 +88,8 @@ struct kisVkImage
 {
     VkImage m_image;
     VmaAllocation m_alloc;
+    VkSampler m_sampler;
+    VkImageView m_view;
 };
 
 //--------------------------------------------------------------------------
