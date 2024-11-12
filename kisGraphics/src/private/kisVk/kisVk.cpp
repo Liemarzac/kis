@@ -548,15 +548,21 @@ void kisVkCreateDevice()
     KIS_MEM_REGISTER_EXTERNAL(g_kisVkInfo.m_cmdBuffer, kisMemTag::Vulkan, "vulkan_command_buffer");
 
     // Create desciptor pool.
-    const VkDescriptorPoolSize uniformBuffersDescriptorPoolSize = {
-        .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .descriptorCount = k_kisVkMaxNumImages,
+    const VkDescriptorPoolSize descriptorPoolSizes[] = {
+        {
+            .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorCount = k_kisVkMaxNumImages,
+        },
+        {
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .descriptorCount = k_kisVkMaxNumImages,
+        },
     };
 
     const VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-        .poolSizeCount = 1,
-        .pPoolSizes = &uniformBuffersDescriptorPoolSize,
+        .poolSizeCount = KIS_ARRAY_COUNT(descriptorPoolSizes),
+        .pPoolSizes = descriptorPoolSizes,
         .maxSets = k_kisVkMaxNumImages,
     };
 
@@ -840,6 +846,13 @@ void kisVKLoadAssets()
             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
             .pImmutableSamplers = nullptr
         },
+        {
+            .binding = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .descriptorCount = 1,
+            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .pImmutableSamplers = nullptr,
+        }
     };
 
     const VkDescriptorSetLayoutCreateInfo objectDescriptorSetLayoutCreateInfo = {
@@ -1353,7 +1366,6 @@ void kisVkRender(const kisRenderParams& renderParams)
     kisMatrix4 projection = glm::perspective(kisDegToRad(45.0f), (float)g_kisVkInfo.m_swapchainSize.width / (float)g_kisVkInfo.m_swapchainSize.height, 0.1f, 10.0f);
     projection[1][1] = -projection[1][1];
 
-    
     //
     // Create draw calls.
 
@@ -1378,19 +1390,39 @@ void kisVkRender(const kisRenderParams& renderParams)
             .range = sizeof(kisVkUBOObjectVertexBuffer)
         };
 
-        const VkWriteDescriptorSet writeDescriptorSet = {
-            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .dstSet = descriptorSet,
-            .dstBinding = 0,
-            .dstArrayElement = 0,
-            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            .descriptorCount = 1,
-            .pBufferInfo = &descriptorBufferInfo,
-            .pImageInfo = nullptr,
-            .pTexelBufferView = nullptr,
+        const kisVkImage& image = g_kisVk->m_images[0];
+        const VkDescriptorImageInfo imageInfo = {
+            .imageView = image.m_view,
+            .sampler = image.m_sampler,
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
         };
 
-        vkUpdateDescriptorSets(g_kisVkInfo.m_device, 1, &writeDescriptorSet, 0, nullptr);
+        const VkWriteDescriptorSet writeDescriptorSets[] = {
+            {
+                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                .dstSet = descriptorSet,
+                .dstBinding = 0,
+                .dstArrayElement = 0,
+                .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                .descriptorCount = 1,
+                .pBufferInfo = &descriptorBufferInfo,
+                .pImageInfo = nullptr,
+                .pTexelBufferView = nullptr,
+            },
+            {
+                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                .dstSet = descriptorSet,
+                .dstBinding = 1,
+                .dstArrayElement = 0,
+                .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                .descriptorCount = 1,
+                .pBufferInfo = nullptr,
+                .pImageInfo = &imageInfo,
+                .pTexelBufferView = nullptr,
+            }
+        };
+
+        vkUpdateDescriptorSets(g_kisVkInfo.m_device, KIS_ARRAY_COUNT(writeDescriptorSets), writeDescriptorSets, 0, nullptr);
 
         // Update uniform buffer.
         kisByte* writePtr = frame.m_uniformBufferMapped + frame.m_uniformBufferOffset;
@@ -1540,19 +1572,19 @@ uint32_t kisVkCreateTexture2D(const void* data, size_t size, uint32_t width, uin
     VkBuffer stagingBuffer;
     VmaAllocation stagingBufferAlloc;
     VmaAllocationInfo stagingBufferAllocInfo;
-    
+
     const VkBufferCreateInfo stagingBufferCreateInfo = {
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
         .size = size,
         .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE
     };
-    
+
     const VmaAllocationCreateInfo allocCreateInfo = {
         .usage = VMA_MEMORY_USAGE_AUTO,
         .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
     };
-    
+
     vmaCreateBuffer(g_kisVkInfo.m_vmaAllocator, &stagingBufferCreateInfo, &allocCreateInfo, &stagingBuffer, &stagingBufferAlloc, &stagingBufferAllocInfo);
     KIS_MEM_REGISTER_EXTERNAL(stagingBuffer, kisMemTag::Vulkan, "vulkan_vma_staging_buffer");
     KIS_MEM_REGISTER_EXTERNAL(stagingBufferAlloc, kisMemTag::Vulkan, "vulkan_vma_staging_buffer_alloc");
@@ -1633,9 +1665,9 @@ uint32_t kisVkCreateTexture2D(const void* data, size_t size, uint32_t width, uin
 
         copyRegions[iLevel] = {
             .bufferOffset = bufferOffset,
-            .bufferRowLength = 0,
-            .bufferImageHeight = 0,
+            .bufferRowLength = mipWidth,
             .imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .imageSubresource.mipLevel = iLevel,
             .imageSubresource.layerCount = 1,
             .imageExtent.width = mipWidth,
             .imageExtent.height = mipHeight,
