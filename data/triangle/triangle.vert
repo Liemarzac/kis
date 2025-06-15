@@ -15,10 +15,10 @@ layout(location = 4) in vec3 inTangent;
 layout(location = 5) in vec3 inBitangent;
 
 // Vertex output
-layout(location = 0) out vec3 fragColor;
+layout(location = 0) out vec2 outUV;
 
 void main()
 {
+    outUV = inUV;
     gl_Position = objectUBO.m_modelViewProj * vec4(inPosition, 1.0);
-    fragColor = inColor;
 }

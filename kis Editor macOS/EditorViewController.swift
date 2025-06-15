@@ -19,6 +19,7 @@ class EditorViewController: NSViewController {
 
         if let window = self.view.window {
             window.isReleasedWhenClosed = true
+            window.orderFrontRegardless()
         }
 
         guard let mtkView = self.view as? MTKView else {
