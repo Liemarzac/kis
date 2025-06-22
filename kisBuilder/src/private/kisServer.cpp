@@ -7,12 +7,7 @@ static nng_socket s_socket;
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-static const char* s_listenURL = "tcp://0.0.0.0:8126";
-
-
-//--------------------------------------------------------------------------
-//--------------------------------------------------------------------------
-bool kisBuilderStartServer(const char* url)
+bool kisBuilder_StartServer(const char* url)
 {
     // Restrict the number of threads created by nng.
     nng_init_set_parameter(NNG_INIT_MAX_TASK_THREADS, 2);
@@ -39,21 +34,7 @@ bool kisBuilderStartServer(const char* url)
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void kisBuilderStopSever()
+void kisBuilder_StopServer()
 {
     // Nothing to do.
-}
-
-//--------------------------------------------------------------------------
-//--------------------------------------------------------------------------
-int main(int argc, const char * argv[])
-{
-    if(!kisBuilderStartServer(s_listenURL))
-    {
-        return 1;
-    }
-
-    kisBuilderStopSever();
-
-    return 0;
 }

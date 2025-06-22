@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 56;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -55,6 +55,11 @@
 		7A5ACE722BC5E2A0006FEC53 /* rpmalloc.c in Sources */ = {isa = PBXBuildFile; fileRef = 7A5ACE712BC5E2A0006FEC53 /* rpmalloc.c */; };
 		7A5ACE732BC5E2A0006FEC53 /* rpmalloc.c in Sources */ = {isa = PBXBuildFile; fileRef = 7A5ACE712BC5E2A0006FEC53 /* rpmalloc.c */; };
 		7A5ACE742BC5E2A0006FEC53 /* rpmalloc.c in Sources */ = {isa = PBXBuildFile; fileRef = 7A5ACE712BC5E2A0006FEC53 /* rpmalloc.c */; };
+		7A650F692E082B3300D9BA8D /* kisBuilder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A650F682E082B3300D9BA8D /* kisBuilder.cpp */; };
+		7A650F6F2E082DF800D9BA8D /* kisClient.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A650F6E2E082DF800D9BA8D /* kisClient.cpp */; };
+		7A650F722E082E7C00D9BA8D /* kisServer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A650F712E082E7C00D9BA8D /* kisServer.cpp */; };
+		7A650F752E08324900D9BA8D /* kisThreading.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A650F742E08324900D9BA8D /* kisThreading.cpp */; };
+		7A650F762E08324900D9BA8D /* kisThreading.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A650F742E08324900D9BA8D /* kisThreading.cpp */; };
 		7A8BD5792B35F48E00A23795 /* kisTime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A0B76002AFCCC4B00CD2584 /* kisTime.cpp */; };
 		7A8BD57A2B35F48E00A23795 /* kisMem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A452DEE2AE854DC00700DCB /* kisMem.cpp */; };
 		7A8BD57B2B35F48E00A23795 /* kisCore.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A452D9B2AE4007C00700DCB /* kisCore.cpp */; };
@@ -309,9 +314,17 @@
 		7A45BEB92B25D29F008C0242 /* kisBuffer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = kisBuffer.cpp; path = src/private/kisBuffer.cpp; sourceTree = "<group>"; };
 		7A45BEBB2B25E520008C0242 /* kisCoreShared.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisCoreShared.h; path = src/public/kisCore/kisCoreShared.h; sourceTree = "<group>"; };
 		7A45BEBC2B2E317C008C0242 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		7A4E46E32DFFF6DD00F080FA /* kisThreading.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisThreading.h; path = src/public/kisCore/kisThreading.h; sourceTree = "<group>"; };
 		7A5ACE712BC5E2A0006FEC53 /* rpmalloc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = rpmalloc.c; path = external/rpmalloc/rpmalloc/rpmalloc.c; sourceTree = SOURCE_ROOT; };
 		7A5ACE752BC5E2BF006FEC53 /* rpmalloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rpmalloc.h; path = external/rpmalloc/rpmalloc/rpmalloc.h; sourceTree = SOURCE_ROOT; };
 		7A5ACE782BD42474006FEC53 /* kisFlagSet.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisFlagSet.h; path = src/public/kisCore/kisFlagSet.h; sourceTree = "<group>"; };
+		7A650F682E082B3300D9BA8D /* kisBuilder.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = kisBuilder.cpp; path = src/private/kisBuilder.cpp; sourceTree = "<group>"; };
+		7A650F6D2E082C7300D9BA8D /* kisClientServer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisClientServer.h; path = src/public/kisClientServer.h; sourceTree = "<group>"; };
+		7A650F6E2E082DF800D9BA8D /* kisClient.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = kisClient.cpp; path = src/private/kisClient.cpp; sourceTree = "<group>"; };
+		7A650F702E082E0C00D9BA8D /* kisClient.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisClient.h; path = src/public/kisClient.h; sourceTree = "<group>"; };
+		7A650F712E082E7C00D9BA8D /* kisServer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = kisServer.cpp; path = src/private/kisServer.cpp; sourceTree = "<group>"; };
+		7A650F732E082E8E00D9BA8D /* kisServer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisServer.h; path = src/private/kisServer.h; sourceTree = "<group>"; };
+		7A650F742E08324900D9BA8D /* kisThreading.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = kisThreading.cpp; path = src/private/interfaces/posix/kisThreading.cpp; sourceTree = "<group>"; };
 		7A8BD5842B35F48E00A23795 /* libkisCore_macOS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libkisCore_macOS.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		7A8BD5932B35F4C000A23795 /* libkisEngine_macOS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libkisEngine_macOS.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		7A8BD5A22B35F51000A23795 /* libkisGraphics_macOS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libkisGraphics_macOS.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -323,10 +336,6 @@
 		7AB361BC2B16A68200DA31E4 /* kisEditor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = kisEditor.h; path = src/public/kisEditor/kisEditor.h; sourceTree = "<group>"; };
 		7AB361BD2B16A69000DA31E4 /* module.modulemap */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = "sourcecode.module-map"; name = module.modulemap; path = src/public/module.modulemap; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		7A413D872DFEDC1C00E9A87F /* kisBuilder */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = kisBuilder; sourceTree = "<group>"; };
-/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		7A36CA882B5C68A400A006D8 /* Frameworks */ = {
@@ -440,6 +449,7 @@
 		7A452D572AE4000000700DCB = {
 			isa = PBXGroup;
 			children = (
+				7A650F672E082AA000D9BA8D /* kisBuilder */,
 				7AB361B12B16A5D300DA31E4 /* kisEditor */,
 				7AB361692B126CCE00DA31E4 /* kis Editor macOS */,
 				7A0B75F02AEF0AFA00CD2584 /* kis-iOS_Config.xcconfig */,
@@ -451,7 +461,6 @@
 				7A452DA82AE400FC00700DCB /* kisGraphics */,
 				7A452DC32AE42AA600700DCB /* kisEngine */,
 				7A36CA8C2B5C68A400A006D8 /* kisTest */,
-				7A413D872DFEDC1C00E9A87F /* kisBuilder */,
 				7A452D662AE4000200700DCB /* Products */,
 				7A452DD62AE431FF00700DCB /* Frameworks */,
 			);
@@ -513,6 +522,8 @@
 		7A452D952AE4002E00700DCB /* kisCore */ = {
 			isa = PBXGroup;
 			children = (
+				7A650F742E08324900D9BA8D /* kisThreading.cpp */,
+				7A4E46E32DFFF6DD00F080FA /* kisThreading.h */,
 				7A5ACE702BC5E242006FEC53 /* externals */,
 				7A36CA862B4B2E3C00A006D8 /* kisFixedHashMap.h */,
 				7A0B75FE2AFAE2D300CD2584 /* kisFixedArray.h */,
@@ -591,6 +602,19 @@
 			name = externals;
 			sourceTree = "<group>";
 		};
+		7A650F672E082AA000D9BA8D /* kisBuilder */ = {
+			isa = PBXGroup;
+			children = (
+				7A650F732E082E8E00D9BA8D /* kisServer.h */,
+				7A650F712E082E7C00D9BA8D /* kisServer.cpp */,
+				7A650F702E082E0C00D9BA8D /* kisClient.h */,
+				7A650F6E2E082DF800D9BA8D /* kisClient.cpp */,
+				7A650F6D2E082C7300D9BA8D /* kisClientServer.h */,
+				7A650F682E082B3300D9BA8D /* kisBuilder.cpp */,
+			);
+			path = kisBuilder;
+			sourceTree = "<group>";
+		};
 		7AB361692B126CCE00DA31E4 /* kis Editor macOS */ = {
 			isa = PBXGroup;
 			children = (
@@ -644,9 +668,6 @@
 			buildRules = (
 			);
 			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				7A413D872DFEDC1C00E9A87F /* kisBuilder */,
 			);
 			name = kisBuilder;
 			packageProductDependencies = (
@@ -949,6 +970,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7A650F6F2E082DF800D9BA8D /* kisClient.cpp in Sources */,
+				7A650F722E082E7C00D9BA8D /* kisServer.cpp in Sources */,
+				7A650F692E082B3300D9BA8D /* kisBuilder.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -981,6 +1005,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7A650F752E08324900D9BA8D /* kisThreading.cpp in Sources */,
 				7A0B76012AFCCC4B00CD2584 /* kisTime.cpp in Sources */,
 				7A452DEF2AE854DC00700DCB /* kisMem.cpp in Sources */,
 				7A452D9D2AE4007C00700DCB /* kisCore.cpp in Sources */,
@@ -1015,6 +1040,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7A650F762E08324900D9BA8D /* kisThreading.cpp in Sources */,
 				7A8BD5792B35F48E00A23795 /* kisTime.cpp in Sources */,
 				7A8BD57A2B35F48E00A23795 /* kisMem.cpp in Sources */,
 				7A8BD57B2B35F48E00A23795 /* kisCore.cpp in Sources */,
