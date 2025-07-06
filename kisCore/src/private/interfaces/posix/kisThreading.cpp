@@ -1,6 +1,7 @@
 #include "kisThreading.h"
 
 #include <pthread.h>
+#include <unistd.h>
 
 
 //--------------------------------------------------------------------------
@@ -38,4 +39,11 @@ void kisThread_Join(kisThread thread)
 {
     void* retVal;
     KIS_CHECK(pthread_join(kis_PThreadRef(thread), &retVal));
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisSleep(uint32_t timeMillsec)
+{
+    sleep(timeMillsec);
 }

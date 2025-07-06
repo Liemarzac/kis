@@ -56,10 +56,14 @@
 		7A5ACE732BC5E2A0006FEC53 /* rpmalloc.c in Sources */ = {isa = PBXBuildFile; fileRef = 7A5ACE712BC5E2A0006FEC53 /* rpmalloc.c */; };
 		7A5ACE742BC5E2A0006FEC53 /* rpmalloc.c in Sources */ = {isa = PBXBuildFile; fileRef = 7A5ACE712BC5E2A0006FEC53 /* rpmalloc.c */; };
 		7A650F692E082B3300D9BA8D /* kisBuilder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A650F682E082B3300D9BA8D /* kisBuilder.cpp */; };
-		7A650F6F2E082DF800D9BA8D /* kisClient.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A650F6E2E082DF800D9BA8D /* kisClient.cpp */; };
 		7A650F722E082E7C00D9BA8D /* kisServer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A650F712E082E7C00D9BA8D /* kisServer.cpp */; };
 		7A650F752E08324900D9BA8D /* kisThreading.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A650F742E08324900D9BA8D /* kisThreading.cpp */; };
 		7A650F762E08324900D9BA8D /* kisThreading.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A650F742E08324900D9BA8D /* kisThreading.cpp */; };
+		7A650F792E113F6200D9BA8D /* libkisCore_macOS.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A8BD5842B35F48E00A23795 /* libkisCore_macOS.a */; };
+		7A650F802E11600900D9BA8D /* kisResource.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A650F7F2E11600900D9BA8D /* kisResource.cpp */; };
+		7A650F812E11600900D9BA8D /* kisResource.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A650F7F2E11600900D9BA8D /* kisResource.cpp */; };
+		7A650F872E119DE200D9BA8D /* kisBuilderClient.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A650F842E119DE200D9BA8D /* kisBuilderClient.cpp */; };
+		7A650F892E119DE200D9BA8D /* kisBuilderClient.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A650F842E119DE200D9BA8D /* kisBuilderClient.cpp */; };
 		7A8BD5792B35F48E00A23795 /* kisTime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A0B76002AFCCC4B00CD2584 /* kisTime.cpp */; };
 		7A8BD57A2B35F48E00A23795 /* kisMem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A452DEE2AE854DC00700DCB /* kisMem.cpp */; };
 		7A8BD57B2B35F48E00A23795 /* kisCore.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A452D9B2AE4007C00700DCB /* kisCore.cpp */; };
@@ -75,6 +79,8 @@
 		7A8BD5AA2B35F58800A23795 /* libkisCore_macOS.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A8BD5842B35F48E00A23795 /* libkisCore_macOS.a */; };
 		7A8BD5AB2B35F58C00A23795 /* libkisGraphics_macOS.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A8BD5A22B35F51000A23795 /* libkisGraphics_macOS.a */; };
 		7A8BD5AC2B35F5DA00A23795 /* libkisCore_macOS.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7A8BD5842B35F48E00A23795 /* libkisCore_macOS.a */; };
+		7A8DCA6F2E1AF13B00C06518 /* kisNNG.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A8DCA6E2E1AF13B00C06518 /* kisNNG.cpp */; };
+		7A8DCA702E1AF13B00C06518 /* kisNNG.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A8DCA6E2E1AF13B00C06518 /* kisNNG.cpp */; };
 		7AB361792B126DCE00DA31E4 /* data in Resources */ = {isa = PBXBuildFile; fileRef = 7A452E0A2AED443300700DCB /* data */; };
 		7AB361952B12742100DA31E4 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7AB361942B12742100DA31E4 /* Main.storyboard */; };
 		7AB361972B12744800DA31E4 /* EditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB361962B12744800DA31E4 /* EditorViewController.swift */; };
@@ -138,6 +144,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 7AB361A02B16A56000DA31E4;
 			remoteInfo = kisEditor;
+		};
+		7A650F772E113F4000D9BA8D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7A452D582AE4000000700DCB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7A8BD5772B35F48E00A23795;
+			remoteInfo = kisCore_macOS;
 		};
 		7A8BD5A32B35F55500A23795 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -319,15 +332,21 @@
 		7A5ACE752BC5E2BF006FEC53 /* rpmalloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rpmalloc.h; path = external/rpmalloc/rpmalloc/rpmalloc.h; sourceTree = SOURCE_ROOT; };
 		7A5ACE782BD42474006FEC53 /* kisFlagSet.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisFlagSet.h; path = src/public/kisCore/kisFlagSet.h; sourceTree = "<group>"; };
 		7A650F682E082B3300D9BA8D /* kisBuilder.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = kisBuilder.cpp; path = src/private/kisBuilder.cpp; sourceTree = "<group>"; };
-		7A650F6D2E082C7300D9BA8D /* kisClientServer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisClientServer.h; path = src/public/kisClientServer.h; sourceTree = "<group>"; };
-		7A650F6E2E082DF800D9BA8D /* kisClient.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = kisClient.cpp; path = src/private/kisClient.cpp; sourceTree = "<group>"; };
-		7A650F702E082E0C00D9BA8D /* kisClient.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisClient.h; path = src/public/kisClient.h; sourceTree = "<group>"; };
 		7A650F712E082E7C00D9BA8D /* kisServer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = kisServer.cpp; path = src/private/kisServer.cpp; sourceTree = "<group>"; };
 		7A650F732E082E8E00D9BA8D /* kisServer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisServer.h; path = src/private/kisServer.h; sourceTree = "<group>"; };
 		7A650F742E08324900D9BA8D /* kisThreading.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = kisThreading.cpp; path = src/private/interfaces/posix/kisThreading.cpp; sourceTree = "<group>"; };
+		7A650F7E2E115FF500D9BA8D /* kisResource.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisResource.h; path = src/public/kisCore/kisResource.h; sourceTree = "<group>"; };
+		7A650F7F2E11600900D9BA8D /* kisResource.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = kisResource.cpp; path = src/private/kisResource.cpp; sourceTree = "<group>"; };
+		7A650F832E119DE200D9BA8D /* kisBuilderClient.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisBuilderClient.h; path = src/private/kisBuilderClient.h; sourceTree = "<group>"; };
+		7A650F842E119DE200D9BA8D /* kisBuilderClient.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = kisBuilderClient.cpp; path = src/private/kisBuilderClient.cpp; sourceTree = "<group>"; };
 		7A8BD5842B35F48E00A23795 /* libkisCore_macOS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libkisCore_macOS.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		7A8BD5932B35F4C000A23795 /* libkisEngine_macOS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libkisEngine_macOS.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		7A8BD5A22B35F51000A23795 /* libkisGraphics_macOS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libkisGraphics_macOS.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		7A8DCA6A2E1ABD8200C06518 /* kisBuilderNetMsg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisBuilderNetMsg.h; path = src/public/kisCore/kisBuilderNetMsg.h; sourceTree = "<group>"; };
+		7A8DCA6E2E1AF13B00C06518 /* kisNNG.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = kisNNG.cpp; path = src/private/kisNNG.cpp; sourceTree = "<group>"; };
+		7A8DCA712E1AF19F00C06518 /* kisBuilderClientServer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisBuilderClientServer.h; path = src/public/kisCore/kisBuilderClientServer.h; sourceTree = "<group>"; };
+		7A8DCA762E1B0C6500C06518 /* kisNNG.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = kisNNG.h; path = src/public/kisCore/kisNNG.h; sourceTree = "<group>"; };
+		7A8DCA772E1B1E9B00C06518 /* kis-iOS-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "kis-iOS-Info.plist"; sourceTree = SOURCE_ROOT; };
 		7AB3617E2B126DCE00DA31E4 /* kis Editor macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "kis Editor macOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		7AB361942B12742100DA31E4 /* Main.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Main.storyboard; sourceTree = "<group>"; };
 		7AB361962B12744800DA31E4 /* EditorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorViewController.swift; sourceTree = "<group>"; };
@@ -350,6 +369,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7A650F792E113F6200D9BA8D /* libkisCore_macOS.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -500,6 +520,7 @@
 		7A452D672AE4000200700DCB /* kis iOS */ = {
 			isa = PBXGroup;
 			children = (
+				7A8DCA772E1B1E9B00C06518 /* kis-iOS-Info.plist */,
 				7A452D682AE4000200700DCB /* AppDelegate.swift */,
 				7A452D6A2AE4000200700DCB /* GameViewController.swift */,
 				7A452D6C2AE4000200700DCB /* Main.storyboard */,
@@ -522,6 +543,14 @@
 		7A452D952AE4002E00700DCB /* kisCore */ = {
 			isa = PBXGroup;
 			children = (
+				7A8DCA762E1B0C6500C06518 /* kisNNG.h */,
+				7A8DCA712E1AF19F00C06518 /* kisBuilderClientServer.h */,
+				7A8DCA6E2E1AF13B00C06518 /* kisNNG.cpp */,
+				7A8DCA6A2E1ABD8200C06518 /* kisBuilderNetMsg.h */,
+				7A650F832E119DE200D9BA8D /* kisBuilderClient.h */,
+				7A650F842E119DE200D9BA8D /* kisBuilderClient.cpp */,
+				7A650F7F2E11600900D9BA8D /* kisResource.cpp */,
+				7A650F7E2E115FF500D9BA8D /* kisResource.h */,
 				7A650F742E08324900D9BA8D /* kisThreading.cpp */,
 				7A4E46E32DFFF6DD00F080FA /* kisThreading.h */,
 				7A5ACE702BC5E242006FEC53 /* externals */,
@@ -607,9 +636,6 @@
 			children = (
 				7A650F732E082E8E00D9BA8D /* kisServer.h */,
 				7A650F712E082E7C00D9BA8D /* kisServer.cpp */,
-				7A650F702E082E0C00D9BA8D /* kisClient.h */,
-				7A650F6E2E082DF800D9BA8D /* kisClient.cpp */,
-				7A650F6D2E082C7300D9BA8D /* kisClientServer.h */,
 				7A650F682E082B3300D9BA8D /* kisBuilder.cpp */,
 			);
 			path = kisBuilder;
@@ -668,6 +694,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				7A650F782E113F4000D9BA8D /* PBXTargetDependency */,
 			);
 			name = kisBuilder;
 			packageProductDependencies = (
@@ -970,7 +997,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7A650F6F2E082DF800D9BA8D /* kisClient.cpp in Sources */,
 				7A650F722E082E7C00D9BA8D /* kisServer.cpp in Sources */,
 				7A650F692E082B3300D9BA8D /* kisBuilder.cpp in Sources */,
 			);
@@ -1008,10 +1034,13 @@
 				7A650F752E08324900D9BA8D /* kisThreading.cpp in Sources */,
 				7A0B76012AFCCC4B00CD2584 /* kisTime.cpp in Sources */,
 				7A452DEF2AE854DC00700DCB /* kisMem.cpp in Sources */,
+				7A650F892E119DE200D9BA8D /* kisBuilderClient.cpp in Sources */,
+				7A650F802E11600900D9BA8D /* kisResource.cpp in Sources */,
 				7A452D9D2AE4007C00700DCB /* kisCore.cpp in Sources */,
 				7A36CA992B679C2500A006D8 /* kisHash.cpp in Sources */,
 				7A45BEBA2B25D29F008C0242 /* kisBuffer.cpp in Sources */,
 				7A5ACE732BC5E2A0006FEC53 /* rpmalloc.c in Sources */,
+				7A8DCA702E1AF13B00C06518 /* kisNNG.cpp in Sources */,
 				7A452DEC2AE8535600700DCB /* kisFile.cpp in Sources */,
 				7A0B75F22AF04FFA00CD2584 /* kisMath.cpp in Sources */,
 			);
@@ -1043,10 +1072,13 @@
 				7A650F762E08324900D9BA8D /* kisThreading.cpp in Sources */,
 				7A8BD5792B35F48E00A23795 /* kisTime.cpp in Sources */,
 				7A8BD57A2B35F48E00A23795 /* kisMem.cpp in Sources */,
+				7A650F872E119DE200D9BA8D /* kisBuilderClient.cpp in Sources */,
+				7A650F812E11600900D9BA8D /* kisResource.cpp in Sources */,
 				7A8BD57B2B35F48E00A23795 /* kisCore.cpp in Sources */,
 				7A36CA9A2B679C2500A006D8 /* kisHash.cpp in Sources */,
 				7A8BD57C2B35F48E00A23795 /* kisBuffer.cpp in Sources */,
 				7A5ACE742BC5E2A0006FEC53 /* rpmalloc.c in Sources */,
+				7A8DCA6F2E1AF13B00C06518 /* kisNNG.cpp in Sources */,
 				7A8BD57D2B35F48E00A23795 /* kisFile.cpp in Sources */,
 				7A8BD57E2B35F48E00A23795 /* kisMath.cpp in Sources */,
 			);
@@ -1132,6 +1164,11 @@
 			isa = PBXTargetDependency;
 			target = 7AB361A02B16A56000DA31E4 /* kisEditor */;
 			targetProxy = 7A45BEAF2B193F08008C0242 /* PBXContainerItemProxy */;
+		};
+		7A650F782E113F4000D9BA8D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7A8BD5772B35F48E00A23795 /* kisCore_macOS */;
+			targetProxy = 7A650F772E113F4000D9BA8D /* PBXContainerItemProxy */;
 		};
 		7A8BD5A42B35F55500A23795 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -1225,12 +1262,12 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				HEADER_SEARCH_PATHS = (
-					external/glm,
+					kisCore/src/public,
 					external/nng/include,
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.4;
-				OTHER_LDFLAGS = external/nng/build/macOS/libnng.a;
+				OTHER_LDFLAGS = external/nng/build/macOS/Release/libnng.a;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 			};
@@ -1246,12 +1283,12 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				HEADER_SEARCH_PATHS = (
-					external/glm,
+					kisCore/src/public,
 					external/nng/include,
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.4;
-				OTHER_LDFLAGS = external/nng/build/macOS/libnng.a;
+				OTHER_LDFLAGS = external/nng/build/macOS/Release/libnng.a;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 			};
@@ -1312,7 +1349,6 @@
 				HEADER_SEARCH_PATHS = external/glm;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				ONLY_ACTIVE_ARCH = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -1382,13 +1418,13 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = kisEngine/src/public;
+				INFOPLIST_FILE = "kis-iOS-Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1418,13 +1454,13 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = kisEngine/src/public;
+				INFOPLIST_FILE = "kis-iOS-Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1465,11 +1501,11 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 13.3;
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"-lc++",
 					"external/MoltenVK/MoltenVK.xcframework/macOS-arm64_x86_64/libMoltenVK.a",
+					external/nng/build/macOS/Release/libnng.a,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.hi.kis.kis;
 				PRODUCT_NAME = kis;
@@ -1500,11 +1536,11 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 13.3;
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"-lc++",
 					"external/MoltenVK/MoltenVK.xcframework/macOS-arm64_x86_64/libMoltenVK.a",
+					external/nng/build/macOS/Release/libnng.a,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.hi.kis.kis;
 				PRODUCT_NAME = kis;
@@ -1521,6 +1557,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				HEADER_SEARCH_PATHS = (
+					external/nng/include,
 					external/rpmalloc,
 					"${inherited}",
 				);
@@ -1540,6 +1577,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				HEADER_SEARCH_PATHS = (
+					external/nng/include,
 					external/rpmalloc,
 					"${inherited}",
 				);
@@ -1640,6 +1678,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;
 				HEADER_SEARCH_PATHS = (
+					external/nng/include,
 					external/rpmalloc,
 					"${inherited}",
 				);
@@ -1659,6 +1698,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;
 				HEADER_SEARCH_PATHS = (
+					external/nng/include,
 					external/rpmalloc,
 					"${inherited}",
 				);

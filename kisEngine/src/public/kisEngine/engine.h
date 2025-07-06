@@ -20,6 +20,11 @@ void kisEngineShutdown();
 void kisEngineRender();
 void kisEngineResize(unsigned int width, unsigned int height);
 
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisEngineLoad();
+void kisEngineUnload();
+
 #if __cplusplus
 }
 #endif

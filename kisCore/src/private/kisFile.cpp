@@ -1,5 +1,7 @@
-#include "kisCore.h"
 #include "kisFile.h"
+
+#include "kisBuilderClient.h"
+#include "kisBuilderClientServer.h"
 #include "kisMem.h"
 
 #include <filesystem>
@@ -8,14 +10,30 @@
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-char g_kisFileDataPath[k_kisCoreMaxPathSize];
+static kisFilePathString s_dataFilePath;
 
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 const char* kisFileDataPath()
 {
-    return g_kisFileDataPath;
+    return s_dataFilePath.c_str();
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisFile_Init(const char* dataPath)
+{
+    s_dataFilePath = dataPath;
+    kisString32 url = kisString32::format("tcp://192.168.1.160:%u", kisBuilder_GetServerDefaultListeningPort());
+    kisBuilder_ClientConnect(url.c_str());
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void kisFile_Shutdown()
+{
+    kisBuilder_ClientDisconnect();
 }
 
 //--------------------------------------------------------------------------
@@ -23,7 +41,7 @@ const char* kisFileDataPath()
 void kisFileOutputFilesystem()
 {
     kisLogTableHeader("Filesystem");
-    for(auto const& dirEntry : std::filesystem::recursive_directory_iterator(g_kisFileDataPath))
+    for(auto const& dirEntry : std::filesystem::recursive_directory_iterator(s_dataFilePath.c_str()))
     {
         kisLogTableEntry(dirEntry.path().c_str());
     }
@@ -34,8 +52,7 @@ void kisFileOutputFilesystem()
 //--------------------------------------------------------------------------
 kisFileBuffer kisFileBufferCreate(const char* path)
 {
-    kisFilePathString fullyQualifiedPath;
-    fullyQualifiedPath.concat("%s/%s", g_kisFileDataPath, path);
+    kisFilePathString fullyQualifiedPath = kisFilePathString::format("%s" KIS_PATH_SEPARATOR "%s", s_dataFilePath.c_str(), path);
 
     kisFileBuffer fileBuffer;
 
@@ -52,6 +69,7 @@ kisFileBuffer kisFileBufferCreate(const char* path)
     }
     else
     {
+        kisBuilder_ClientRequestResource(path);
         fileBuffer.m_data = nullptr;
         fileBuffer.m_size = 0;
     }

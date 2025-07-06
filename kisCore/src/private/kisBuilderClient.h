@@ -1,12 +1,14 @@
 #pragma once
 
-#include <kisCore/kisCore.h>
+#include "kisStringANSIStatic.h"
+
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-bool kisBuilder_StartServer();
-void kisBuilder_StopServer();
+bool kisBuilder_ClientConnect(const char* url);
+void kisBuilder_ClientDisconnect();
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-bool kisBuilder_ServerReceive();
+bool kisBuilder_ClientRequestResource(const kisString64& path);
+

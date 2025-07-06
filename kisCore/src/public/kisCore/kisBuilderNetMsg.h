@@ -1,0 +1,1 @@
+KIS_BUILDER_NET_MSG(ResourceReq)

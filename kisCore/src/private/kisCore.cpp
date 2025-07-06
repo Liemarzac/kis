@@ -19,7 +19,8 @@ void kisCoreInit(const kisCoreInitParams& params)
 
     KIS_MEM_SCOPE_BEGIN(kisMemTag::Core);
 
-    g_kisFileDataPath.concat("%s/data", params.m_dataPath);
+    kisFilePathString dataFilePath = kisFilePathString::format("%s" KIS_PATH_SEPARATOR "data", params.m_dataPath);
+    kisFile_Init(dataFilePath.c_str());
 
     kisFileOutputFilesystem();
 }

@@ -1,0 +1,7 @@
+=== NNG
+external/nng/build/iOS
+external/nng/build/iOS-Simulator
+external/nng/build/macOS
+
+= Commandline
+CMake: cmake ../.. -DCMAKE_TOOLCHAIN_FILE=../../../ios-cmake/iOS.cmake -DTHREADS_HAVE_PTHREAD_ARG=1

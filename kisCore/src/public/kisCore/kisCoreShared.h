@@ -50,6 +50,14 @@ bool kisBitscanReverse(uint32_t& index, uint32_t mask);
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
+#ifdef __GNUC__
+#define KIS_INLINE __attribute__((always_inline)) inline
+#else
+#define KIS_INLINE inline
+#endif
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
 #if defined(__APPLE__)
 #define KIS_INTERFACE_POSIX
 #endif

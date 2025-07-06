@@ -9,6 +9,19 @@
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 template<size_t Size>
+class kisStringANSIStatic;
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+typedef kisStringANSIStatic<32> kisString32;
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+typedef kisStringANSIStatic<64> kisString64;
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+template<size_t Size>
 class kisStringANSIStatic
 {
 public:
@@ -22,6 +35,8 @@ public:
     bool trimLeftOf(const char* str);
     int lastOccurenceOf(const char * str) const;
     bool substring(int from, int to);
+
+    static kisStringANSIStatic format(const char* format, ...);
 
 private:
     char m_buffer[Size];
@@ -170,4 +185,35 @@ bool kisStringANSIStatic<Size>::substring(int from, int to)
     m_nUsed = (uint32_t)copySize;
 
     return true;
+}
+
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+template<size_t Size>
+kisStringANSIStatic<Size> kisStringANSIStatic<Size>::format(const char* format, ...)
+{
+    kisStringANSIStatic str;
+
+    va_list args;
+    va_start(args, format);
+    int nChars = vsnprintf(NULL, 0, format, args);
+    if(nChars + 1 > Size)
+    {
+        goto error;
+    }
+
+    vsnprintf(str.m_buffer, Size, format, args);
+    str.m_nUsed = nChars;
+    str.m_buffer[nChars] = '\0';
+    goto success;
+
+error:
+    KIS_ASSERT(false);
+    goto cleanup;
+
+success:
+cleanup:
+    va_end(args);
+
+    return str;
 }
